@@ -9,6 +9,8 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
+  ActionSheetIOS,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { EnrichedTextInput } from 'react-native-enriched';
@@ -17,6 +19,8 @@ import {
   ExpoSpeechRecognitionModule,
   useSpeechRecognitionEvent,
 } from 'expo-speech-recognition';
+import * as ImagePicker from 'expo-image-picker';
+import { extractTextFromImage } from 'expo-text-extractor';
 import { useTheme } from '@/hooks';
 import { Spacing, FontSize, FontWeight, BorderRadius } from '@/constants/theme';
 
@@ -41,6 +45,7 @@ export function RichTextEditorModal({
   const editorRef = useRef<EnrichedTextInputInstance>(null);
   const [stylesState, setStylesState] = useState<OnChangeStateEvent | null>(null);
   const [isListening, setIsListening] = useState(false);
+  const [isProcessingImage, setIsProcessingImage] = useState(false);
 
   useEffect(() => {
     if (visible && initialValue && editorRef.current) {
@@ -61,30 +66,7 @@ export function RichTextEditorModal({
   useSpeechRecognitionEvent('result', async (event) => {
     const transcript = event.results[0]?.transcript;
     if (transcript && event.isFinal && editorRef.current) {
-      // Get current HTML and append the transcript
-      const currentHtml = await editorRef.current.getHTML();
-
-      // If empty or just an empty paragraph, replace it
-      if (!currentHtml || currentHtml === '<p></p>' || currentHtml.trim() === '') {
-        editorRef.current.setValue(`<p>${transcript}</p>`);
-      } else {
-        // Append to the last paragraph or create a new one
-        // Remove closing </html> if present, append text, add it back
-        let newHtml = currentHtml;
-        if (newHtml.endsWith('</html>')) {
-          newHtml = newHtml.slice(0, -7);
-        }
-        if (newHtml.endsWith('</p>')) {
-          // Insert before the last </p>
-          newHtml = newHtml.slice(0, -4) + ' ' + transcript + '</p>';
-        } else {
-          newHtml = newHtml + ' ' + transcript;
-        }
-        if (currentHtml.endsWith('</html>')) {
-          newHtml += '</html>';
-        }
-        editorRef.current.setValue(newHtml);
-      }
+      await appendTextToEditor(transcript);
     }
   });
 
@@ -98,6 +80,30 @@ export function RichTextEditorModal({
       Alert.alert('Speech Error', event.message || 'An error occurred');
     }
   });
+
+  const appendTextToEditor = async (text: string) => {
+    if (!editorRef.current) return;
+
+    const currentHtml = await editorRef.current.getHTML();
+
+    if (!currentHtml || currentHtml === '<p></p>' || currentHtml.trim() === '') {
+      editorRef.current.setValue(`<p>${text}</p>`);
+    } else {
+      let newHtml = currentHtml;
+      if (newHtml.endsWith('</html>')) {
+        newHtml = newHtml.slice(0, -7);
+      }
+      if (newHtml.endsWith('</p>')) {
+        newHtml = newHtml.slice(0, -4) + ' ' + text + '</p>';
+      } else {
+        newHtml = newHtml + ' ' + text;
+      }
+      if (currentHtml.endsWith('</html>')) {
+        newHtml += '</html>';
+      }
+      editorRef.current.setValue(newHtml);
+    }
+  };
 
   const handleSave = async () => {
     if (isListening) {
@@ -133,6 +139,94 @@ export function RichTextEditorModal({
     } catch (error) {
       console.error('Failed to start speech recognition:', error);
       Alert.alert('Error', 'Failed to start voice input');
+    }
+  };
+
+  const handleImagePress = () => {
+    if (Platform.OS === 'ios') {
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          options: ['Cancel', 'Take Photo', 'Choose from Library'],
+          cancelButtonIndex: 0,
+        },
+        (buttonIndex) => {
+          if (buttonIndex === 1) {
+            pickImage('camera');
+          } else if (buttonIndex === 2) {
+            pickImage('library');
+          }
+        }
+      );
+    } else {
+      // Android: use Alert with buttons
+      Alert.alert(
+        'Select Image',
+        'Choose an image source',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Take Photo', onPress: () => pickImage('camera') },
+          { text: 'Choose from Library', onPress: () => pickImage('library') },
+        ]
+      );
+    }
+  };
+
+  const pickImage = async (source: 'camera' | 'library') => {
+    try {
+      // Request permissions
+      if (source === 'camera') {
+        const { status } = await ImagePicker.requestCameraPermissionsAsync();
+        if (status !== 'granted') {
+          Alert.alert('Permission Required', 'Camera permission is needed to take photos.');
+          return;
+        }
+      } else {
+        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (status !== 'granted') {
+          Alert.alert('Permission Required', 'Photo library permission is needed to select images.');
+          return;
+        }
+      }
+
+      const options: ImagePicker.ImagePickerOptions = {
+        allowsEditing: true,
+        quality: 1,
+      };
+
+      const result = source === 'camera'
+        ? await ImagePicker.launchCameraAsync(options)
+        : await ImagePicker.launchImageLibraryAsync(options);
+
+      if (result.canceled || !result.assets || result.assets.length === 0) {
+        return;
+      }
+
+      const imageUri = result.assets[0].uri;
+      await processImageOCR(imageUri);
+    } catch (error) {
+      console.error('Image picker error:', error);
+      Alert.alert('Error', 'Failed to pick image');
+    }
+  };
+
+  const processImageOCR = async (imageUri: string) => {
+    setIsProcessingImage(true);
+
+    try {
+      const results = await extractTextFromImage(imageUri);
+      const extractedText = results.join(' ').trim();
+
+      if (!extractedText) {
+        Alert.alert('No Text Found', 'No text was detected in the image.');
+        return;
+      }
+
+      await appendTextToEditor(extractedText);
+    } catch (error) {
+      console.error('OCR error:', error);
+      Alert.alert('Error', 'Failed to extract text from image');
+    } finally {
+      setIsProcessingImage(false);
     }
   };
 
@@ -211,11 +305,24 @@ export function RichTextEditorModal({
 
           <View style={styles.toolbarSpacer} />
 
+          {/* Image/OCR button */}
+          <TouchableOpacity
+            style={[styles.toolbarButton, styles.iconButton]}
+            onPress={handleImagePress}
+            disabled={isProcessingImage}
+          >
+            <Ionicons
+              name="camera-outline"
+              size={22}
+              color={colors.icon}
+            />
+          </TouchableOpacity>
+
           {/* Microphone button */}
           <TouchableOpacity
             style={[
               styles.toolbarButton,
-              styles.micButton,
+              styles.iconButton,
               isListening && { backgroundColor: colors.error + '20' },
             ]}
             onPress={handleMicPress}
@@ -228,12 +335,21 @@ export function RichTextEditorModal({
           </TouchableOpacity>
         </View>
 
-        {/* Listening indicator */}
+        {/* Status indicators */}
         {isListening && (
-          <View style={[styles.listeningBar, { backgroundColor: colors.error + '15' }]}>
+          <View style={[styles.statusBar, { backgroundColor: colors.error + '15' }]}>
             <Ionicons name="radio" size={16} color={colors.error} />
-            <Text style={[styles.listeningText, { color: colors.error }]}>
+            <Text style={[styles.statusText, { color: colors.error }]}>
               Listening...
+            </Text>
+          </View>
+        )}
+
+        {isProcessingImage && (
+          <View style={[styles.statusBar, { backgroundColor: colors.primary + '15' }]}>
+            <ActivityIndicator size="small" color={colors.primary} />
+            <Text style={[styles.statusText, { color: colors.primary }]}>
+              Extracting text...
             </Text>
           </View>
         )}
@@ -308,17 +424,17 @@ const styles = StyleSheet.create({
   toolbarSpacer: {
     flex: 1,
   },
-  micButton: {
+  iconButton: {
     paddingHorizontal: Spacing.sm,
   },
-  listeningBar: {
+  statusBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: Spacing.xs,
     gap: Spacing.xs,
   },
-  listeningText: {
+  statusText: {
     fontSize: FontSize.sm,
     fontWeight: FontWeight.medium,
   },
