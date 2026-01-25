@@ -375,6 +375,7 @@ export async function exportData(): Promise<ExportData> {
       front_content: c.front_content,
       back_content: c.back_content,
       category_ids: cardCategoryMap.get(c.id) || [],
+      created_at: new Date(c.created_at).toISOString(),
     })),
   };
 }
@@ -453,9 +454,10 @@ export async function importData(
 
   for (const card of data.cards) {
     const newCardId = generateId();
+    const createdAt = card.created_at ? new Date(card.created_at).getTime() : now;
     await db.runAsync(
       'INSERT INTO cards (id, front_content, back_content, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
-      [newCardId, card.front_content, card.back_content, now, now]
+      [newCardId, card.front_content, card.back_content, createdAt, now]
     );
 
     // Add category associations

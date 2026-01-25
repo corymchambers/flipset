@@ -61,6 +61,7 @@ export interface ExportData {
     front_content: string;
     back_content: string;
     category_ids: string[];
+    created_at: string;
   }>;
 }
 
