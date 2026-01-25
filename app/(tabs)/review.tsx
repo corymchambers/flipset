@@ -11,7 +11,7 @@ import { useTheme, useSession } from '@/hooks';
 import { Spacing, FontSize, FontWeight, BorderRadius } from '@/constants/theme';
 import { CategoryWithCount, SessionOrderMode } from '@/types';
 import { getAllCategories, getCardsByCategories } from '@/database';
-import { Button, Checkbox, RadioButton, Card } from '@/components/ui';
+import { Button, Checkbox, RadioButton, Card, EmptyState } from '@/components/ui';
 
 export default function ReviewScreen() {
   const { colors } = useTheme();
@@ -21,6 +21,8 @@ export default function ReviewScreen() {
   const [orderMode, setOrderMode] = useState<SessionOrderMode>('random');
   const [cardCount, setCardCount] = useState(0);
   const [loading, setLoading] = useState(false);
+
+  const totalCards = categories.reduce((sum, c) => sum + c.card_count, 0);
 
   const loadCategories = useCallback(async () => {
     try {
@@ -104,6 +106,20 @@ export default function ReviewScreen() {
     );
   };
 
+  if (totalCards === 0 && !hasActiveSession) {
+    return (
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <EmptyState
+          icon="albums-outline"
+          title="No cards to review"
+          description="Add some flashcards first to start reviewing"
+          actionLabel="Add Cards"
+          onAction={() => router.push('/card/new')}
+        />
+      </View>
+    );
+  }
+
   return (
     <ScrollView
       style={[styles.container, { backgroundColor: colors.background }]}
@@ -185,7 +201,7 @@ export default function ReviewScreen() {
           <RadioButton
             selected={orderMode === 'ordered'}
             onSelect={() => setOrderMode('ordered')}
-            label="Ordered (alphabetical)"
+            label="Ordered (as added)"
           />
         </View>
       </Card>

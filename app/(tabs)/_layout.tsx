@@ -22,6 +22,15 @@ export default function TabsLayout() {
       }}
     >
       <Tabs.Screen
+        name="review"
+        options={{
+          title: 'Review',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="play-circle" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="index"
         options={{
           title: 'Cards',
@@ -36,15 +45,6 @@ export default function TabsLayout() {
           title: 'Categories',
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="folder" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="review"
-        options={{
-          title: 'Review',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="play-circle" size={size} color={color} />
           ),
         }}
       />

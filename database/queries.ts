@@ -249,6 +249,7 @@ export async function getCardsByCategories(categoryIds: string[]): Promise<Card[
       SELECT DISTINCT c.* FROM cards c
       INNER JOIN card_categories cc ON c.id = cc.card_id
       WHERE cc.category_id IN (${placeholders})
+      ORDER BY c.created_at ASC
     `, realCategoryIds);
     cards = [...categoryCards];
   }
@@ -257,6 +258,7 @@ export async function getCardsByCategories(categoryIds: string[]): Promise<Card[
     const uncategorizedCards = await db.getAllAsync<Card>(`
       SELECT * FROM cards
       WHERE id NOT IN (SELECT DISTINCT card_id FROM card_categories)
+      ORDER BY created_at ASC
     `);
 
     // Avoid duplicates
@@ -267,6 +269,9 @@ export async function getCardsByCategories(categoryIds: string[]): Promise<Card[
       }
     }
   }
+
+  // Sort by created_at to maintain consistent order
+  cards.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
 
   return cards;
 }
