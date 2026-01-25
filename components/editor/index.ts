@@ -1,2 +1,3 @@
-export * from './RichTextEditor';
 export * from './RichTextRenderer';
+export * from './RichTextEditorModal';
+export * from './EditableRichTextField';

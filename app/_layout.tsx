@@ -32,28 +32,26 @@ export default function RootLayout() {
           name="card/new"
           options={{
             title: 'New Card',
-            presentation: 'modal',
           }}
         />
         <Stack.Screen
           name="card/[id]"
           options={{
             title: 'Edit Card',
-            presentation: 'modal',
           }}
         />
         <Stack.Screen
           name="category/new"
           options={{
             title: 'New Category',
-            presentation: 'modal',
+            presentation: 'pageSheet',
           }}
         />
         <Stack.Screen
           name="category/[id]"
           options={{
             title: 'Edit Category',
-            presentation: 'modal',
+            presentation: 'pageSheet',
           }}
         />
         <Stack.Screen
