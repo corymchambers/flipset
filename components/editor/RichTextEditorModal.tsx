@@ -8,9 +8,15 @@ import {
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
+  Alert,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { EnrichedTextInput } from 'react-native-enriched';
 import type { EnrichedTextInputInstance, OnChangeStateEvent } from 'react-native-enriched';
+import {
+  ExpoSpeechRecognitionModule,
+  useSpeechRecognitionEvent,
+} from 'expo-speech-recognition';
 import { useTheme } from '@/hooks';
 import { Spacing, FontSize, FontWeight, BorderRadius } from '@/constants/theme';
 
@@ -34,19 +40,100 @@ export function RichTextEditorModal({
   const { colors } = useTheme();
   const editorRef = useRef<EnrichedTextInputInstance>(null);
   const [stylesState, setStylesState] = useState<OnChangeStateEvent | null>(null);
+  const [isListening, setIsListening] = useState(false);
 
   useEffect(() => {
     if (visible && initialValue && editorRef.current) {
-      // Small delay to ensure the editor is ready
       setTimeout(() => {
         editorRef.current?.setValue(initialValue);
       }, 100);
     }
   }, [visible, initialValue]);
 
+  // Stop listening when modal closes
+  useEffect(() => {
+    if (!visible && isListening) {
+      ExpoSpeechRecognitionModule.stop();
+      setIsListening(false);
+    }
+  }, [visible, isListening]);
+
+  useSpeechRecognitionEvent('result', async (event) => {
+    const transcript = event.results[0]?.transcript;
+    if (transcript && event.isFinal && editorRef.current) {
+      // Get current HTML and append the transcript
+      const currentHtml = await editorRef.current.getHTML();
+
+      // If empty or just an empty paragraph, replace it
+      if (!currentHtml || currentHtml === '<p></p>' || currentHtml.trim() === '') {
+        editorRef.current.setValue(`<p>${transcript}</p>`);
+      } else {
+        // Append to the last paragraph or create a new one
+        // Remove closing </html> if present, append text, add it back
+        let newHtml = currentHtml;
+        if (newHtml.endsWith('</html>')) {
+          newHtml = newHtml.slice(0, -7);
+        }
+        if (newHtml.endsWith('</p>')) {
+          // Insert before the last </p>
+          newHtml = newHtml.slice(0, -4) + ' ' + transcript + '</p>';
+        } else {
+          newHtml = newHtml + ' ' + transcript;
+        }
+        if (currentHtml.endsWith('</html>')) {
+          newHtml += '</html>';
+        }
+        editorRef.current.setValue(newHtml);
+      }
+    }
+  });
+
+  useSpeechRecognitionEvent('end', () => {
+    setIsListening(false);
+  });
+
+  useSpeechRecognitionEvent('error', (event) => {
+    setIsListening(false);
+    if (event.error !== 'no-speech') {
+      Alert.alert('Speech Error', event.message || 'An error occurred');
+    }
+  });
+
   const handleSave = async () => {
+    if (isListening) {
+      ExpoSpeechRecognitionModule.stop();
+    }
     const html = await editorRef.current?.getHTML();
     onSave(html || '');
+  };
+
+  const handleMicPress = async () => {
+    if (isListening) {
+      ExpoSpeechRecognitionModule.stop();
+      setIsListening(false);
+      return;
+    }
+
+    const { granted } = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
+    if (!granted) {
+      Alert.alert(
+        'Permission Required',
+        'Microphone permission is needed for voice input. Please enable it in Settings.'
+      );
+      return;
+    }
+
+    try {
+      ExpoSpeechRecognitionModule.start({
+        lang: 'en-US',
+        interimResults: false,
+        continuous: false,
+      });
+      setIsListening(true);
+    } catch (error) {
+      console.error('Failed to start speech recognition:', error);
+      Alert.alert('Error', 'Failed to start voice input');
+    }
   };
 
   const toolbarButtons = [
@@ -121,7 +208,35 @@ export function RichTextEditorModal({
               </Text>
             </TouchableOpacity>
           ))}
+
+          <View style={styles.toolbarSpacer} />
+
+          {/* Microphone button */}
+          <TouchableOpacity
+            style={[
+              styles.toolbarButton,
+              styles.micButton,
+              isListening && { backgroundColor: colors.error + '20' },
+            ]}
+            onPress={handleMicPress}
+          >
+            <Ionicons
+              name={isListening ? 'mic' : 'mic-outline'}
+              size={22}
+              color={isListening ? colors.error : colors.icon}
+            />
+          </TouchableOpacity>
         </View>
+
+        {/* Listening indicator */}
+        {isListening && (
+          <View style={[styles.listeningBar, { backgroundColor: colors.error + '15' }]}>
+            <Ionicons name="radio" size={16} color={colors.error} />
+            <Text style={[styles.listeningText, { color: colors.error }]}>
+              Listening...
+            </Text>
+          </View>
+        )}
 
         {/* Editor */}
         <KeyboardAvoidingView
@@ -189,6 +304,23 @@ const styles = StyleSheet.create({
   toolbarButtonText: {
     fontSize: FontSize.lg,
     fontWeight: '600',
+  },
+  toolbarSpacer: {
+    flex: 1,
+  },
+  micButton: {
+    paddingHorizontal: Spacing.sm,
+  },
+  listeningBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: Spacing.xs,
+    gap: Spacing.xs,
+  },
+  listeningText: {
+    fontSize: FontSize.sm,
+    fontWeight: FontWeight.medium,
   },
   editorContainer: {
     flex: 1,
