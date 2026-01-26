@@ -5,13 +5,17 @@ import {
   StyleSheet,
   ScrollView,
   Alert,
+  TouchableOpacity,
+  Image,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, router } from 'expo-router';
 import { useTheme, useSession } from '@/hooks';
 import { Spacing, FontSize, FontWeight, BorderRadius } from '@/constants/theme';
 import { CategoryWithCount, SessionOrderMode } from '@/types';
 import { getAllCategories, getCardsByCategories } from '@/database';
-import { Button, Checkbox, RadioButton, Card, EmptyState } from '@/components/ui';
+import { Button, RadioButton, Card, EmptyState } from '@/components/ui';
 
 export default function ReviewScreen() {
   const { colors } = useTheme();
@@ -71,10 +75,6 @@ export default function ReviewScreen() {
     setSelectedCategories(categories.map(c => c.id));
   };
 
-  const selectNone = () => {
-    setSelectedCategories([]);
-  };
-
   const handleStartSession = () => {
     if (cardCount === 0) return;
 
@@ -108,23 +108,73 @@ export default function ReviewScreen() {
 
   if (totalCards === 0 && !hasActiveSession) {
     return (
-      <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <EmptyState
-          icon="albums-outline"
-          title="No cards to review"
-          description="Add some flashcards first to start reviewing"
-          actionLabel="Add Cards"
-          onAction={() => router.push('/card/new')}
-        />
-      </View>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
+        <View style={styles.content}>
+          <View style={styles.header}>
+            <Image
+              source={require('@/assets/icons/icon-transparent.png')}
+              style={styles.logo}
+            />
+            <View>
+              <Text style={[styles.appTitle, { color: colors.text }]}>FLIPSET</Text>
+              <Text style={[styles.appSubtitle, { color: colors.textSecondary }]}>
+                Power up your knowledge
+              </Text>
+            </View>
+          </View>
+          <EmptyState
+            icon="albums-outline"
+            title="No cards to review"
+            description="Add some flashcards first to start reviewing"
+            actionLabel="Add Cards"
+            onAction={() => router.push('/card/new')}
+          />
+        </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <ScrollView
-      style={[styles.container, { backgroundColor: colors.background }]}
-      contentContainerStyle={styles.content}
-    >
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.content}
+      >
+        {/* Header */}
+        <View style={styles.header}>
+        <Image
+          source={require('@/assets/icons/icon-transparent.png')}
+          style={styles.logo}
+        />
+        <View>
+          <Text style={[styles.appTitle, { color: colors.text }]}>FLIPSET</Text>
+          <Text style={[styles.appSubtitle, { color: colors.textSecondary }]}>
+            Power up your knowledge
+          </Text>
+        </View>
+      </View>
+
+      {/* Stats Cards */}
+      <View style={styles.statsRow}>
+        <View style={[styles.statsCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <Text style={[styles.statsNumber, { color: colors.text }]}>
+            {categories.length}
+          </Text>
+          <Text style={[styles.statsLabel, { color: colors.textSecondary }]}>
+            Categories
+          </Text>
+        </View>
+        <View style={[styles.statsCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <Text style={[styles.statsNumber, { color: colors.primary }]}>
+            {selectedCategories.length}
+          </Text>
+          <Text style={[styles.statsLabel, { color: colors.textSecondary }]}>
+            Selected
+          </Text>
+        </View>
+      </View>
+
+      {/* Active Session Card */}
       {hasActiveSession && (
         <Card style={[styles.resumeCard, { borderColor: colors.primary }]}>
           <Text style={[styles.resumeTitle, { color: colors.text }]}>
@@ -147,45 +197,66 @@ export default function ReviewScreen() {
         </Card>
       )}
 
-      <Text style={[styles.sectionTitle, { color: colors.text }]}>
-        Select Categories
-      </Text>
-
-      <View style={styles.selectActions}>
-        <Button
-          title="Select All"
-          variant="ghost"
-          size="sm"
-          onPress={selectAll}
-        />
-        <Button
-          title="Select None"
-          variant="ghost"
-          size="sm"
-          onPress={selectNone}
-        />
+      {/* Your Decks Section */}
+      <View style={styles.sectionHeader}>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>
+          Your Decks
+        </Text>
+        <TouchableOpacity onPress={selectAll}>
+          <Text style={[styles.selectAllText, { color: colors.textSecondary }]}>
+            Select All
+          </Text>
+        </TouchableOpacity>
       </View>
 
-      <Card style={styles.categoriesCard}>
-        {categories.length === 0 ? (
-          <Text style={[styles.emptyText, { color: colors.textTertiary }]}>
-            No categories available. Create some categories and cards first.
-          </Text>
-        ) : (
-          categories.map(category => (
-            <View key={category.id} style={styles.categoryRow}>
-              <Checkbox
-                checked={selectedCategories.includes(category.id)}
-                onToggle={() => toggleCategory(category.id)}
-                label={`${category.name} (${category.card_count})`}
-                disabled={category.card_count === 0}
+      {/* Category Cards */}
+      {categories.length === 0 ? (
+        <Text style={[styles.emptyText, { color: colors.textTertiary }]}>
+          No categories available. Create some categories and cards first.
+        </Text>
+      ) : (
+        categories.map(category => (
+          <TouchableOpacity
+            key={category.id}
+            onPress={() => toggleCategory(category.id)}
+            disabled={category.card_count === 0}
+            style={[
+              styles.categoryCard,
+              {
+                backgroundColor: colors.surface,
+                borderColor: selectedCategories.includes(category.id)
+                  ? colors.primary
+                  : colors.border,
+                opacity: category.card_count === 0 ? 0.5 : 1,
+              },
+            ]}
+          >
+            <View style={[styles.categoryAvatar, { backgroundColor: colors.surfaceSecondary }]}>
+              <Text style={[styles.categoryAvatarText, { color: colors.text }]}>
+                {category.name.charAt(0).toUpperCase()}
+              </Text>
+            </View>
+            <View style={styles.categoryInfo}>
+              <Text style={[styles.categoryName, { color: colors.text }]}>
+                {category.name}
+              </Text>
+              <Text style={[styles.categoryCount, { color: colors.textSecondary }]}>
+                {category.card_count} {category.card_count === 1 ? 'card' : 'cards'}
+              </Text>
+            </View>
+            <View style={[styles.categoryArrow, { backgroundColor: colors.surfaceSecondary }]}>
+              <Ionicons
+                name={selectedCategories.includes(category.id) ? 'checkmark' : 'arrow-forward'}
+                size={18}
+                color={selectedCategories.includes(category.id) ? colors.primary : colors.textTertiary}
               />
             </View>
-          ))
-        )}
-      </Card>
+          </TouchableOpacity>
+        ))
+      )}
 
-      <Text style={[styles.sectionTitle, { color: colors.text }]}>
+      {/* Card Order */}
+      <Text style={[styles.sectionTitle, { color: colors.text, marginTop: Spacing.lg }]}>
         Card Order
       </Text>
 
@@ -206,21 +277,23 @@ export default function ReviewScreen() {
         </View>
       </Card>
 
+      {/* Summary */}
       <View style={styles.summary}>
         <Text style={[styles.summaryText, { color: colors.textSecondary }]}>
           {cardCount} {cardCount === 1 ? 'card' : 'cards'} selected
         </Text>
       </View>
 
-      <Button
-        title="Start Review Session"
-        onPress={handleStartSession}
-        disabled={cardCount === 0}
-        loading={loading}
-        fullWidth
-        size="lg"
-      />
-    </ScrollView>
+        <Button
+          title="Start Review Session"
+          onPress={handleStartSession}
+          disabled={cardCount === 0}
+          loading={loading}
+          fullWidth
+          size="lg"
+        />
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
@@ -228,12 +301,52 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  scrollView: {
+    flex: 1,
+  },
   content: {
     padding: Spacing.md,
   },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: Spacing.lg,
+    gap: Spacing.md,
+  },
+  logo: {
+    width: 72,
+    height: 72,
+    borderRadius: BorderRadius.xl,
+  },
+  appTitle: {
+    fontSize: FontSize.xxl,
+    fontWeight: FontWeight.bold,
+    letterSpacing: 1,
+  },
+  appSubtitle: {
+    fontSize: FontSize.sm,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    gap: Spacing.md,
+    marginBottom: Spacing.lg,
+  },
+  statsCard: {
+    flex: 1,
+    padding: Spacing.md,
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1,
+  },
+  statsNumber: {
+    fontSize: FontSize.xxxl,
+    fontWeight: FontWeight.bold,
+  },
+  statsLabel: {
+    fontSize: FontSize.sm,
+  },
   resumeCard: {
     marginBottom: Spacing.lg,
-    borderWidth: 2,
+    borderWidth: 1,
   },
   resumeTitle: {
     fontSize: FontSize.lg,
@@ -249,21 +362,55 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
     justifyContent: 'flex-end',
   },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: Spacing.md,
+  },
   sectionTitle: {
     fontSize: FontSize.lg,
     fontWeight: FontWeight.semibold,
-    marginBottom: Spacing.sm,
   },
-  selectActions: {
+  selectAllText: {
+    fontSize: FontSize.sm,
+  },
+  categoryCard: {
     flexDirection: 'row',
-    gap: Spacing.sm,
+    alignItems: 'center',
+    padding: Spacing.md,
+    borderRadius: BorderRadius.xl,
+    borderWidth: 1,
     marginBottom: Spacing.sm,
+    gap: Spacing.md,
   },
-  categoriesCard: {
-    marginBottom: Spacing.lg,
+  categoryAvatar: {
+    width: 48,
+    height: 48,
+    borderRadius: BorderRadius.lg,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  categoryRow: {
-    paddingVertical: Spacing.sm,
+  categoryAvatarText: {
+    fontSize: FontSize.xl,
+    fontWeight: FontWeight.semibold,
+  },
+  categoryInfo: {
+    flex: 1,
+  },
+  categoryName: {
+    fontSize: FontSize.lg,
+    fontWeight: FontWeight.semibold,
+  },
+  categoryCount: {
+    fontSize: FontSize.sm,
+  },
+  categoryArrow: {
+    width: 36,
+    height: 36,
+    borderRadius: BorderRadius.md,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   emptyText: {
     fontSize: FontSize.md,

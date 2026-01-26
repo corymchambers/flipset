@@ -5,14 +5,9 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "dark",
     "scheme": "flipset",
     "newArchEnabled": true,
-    "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
-    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.corychambers.flipset"
@@ -20,7 +15,7 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#0a0a0a"
       },
       "edgeToEdgeEnabled": true,
       "package": "com.corychambers.flipset"
@@ -33,7 +28,15 @@
       "expo-router",
       "expo-sqlite",
       "expo-font",
-      "expo-speech-recognition"
+      "expo-speech-recognition",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#0a0a0a",
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 1200
+        }
+      ]
     ]
   }
 }

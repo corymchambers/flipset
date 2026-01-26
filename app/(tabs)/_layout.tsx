@@ -25,6 +25,7 @@ export default function TabsLayout() {
         name="review"
         options={{
           title: 'Review',
+          headerShown: false,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="play-circle" size={size} color={color} />
           ),

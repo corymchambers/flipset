@@ -166,7 +166,7 @@ export default function CardsScreen() {
         onPress={() => router.push('/card/new')}
         activeOpacity={0.8}
       >
-        <Ionicons name="add" size={28} color="#FFFFFF" />
+        <Ionicons name="add" size={28} color="#0a0a0a" />
       </TouchableOpacity>
 
       <ConfirmDialog

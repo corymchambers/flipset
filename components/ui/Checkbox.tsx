@@ -32,7 +32,7 @@ export function Checkbox({ checked, onToggle, label, disabled }: CheckboxProps) 
         ]}
       >
         {checked && (
-          <Ionicons name="checkmark" size={16} color="#FFFFFF" />
+          <Ionicons name="checkmark" size={16} color="#0a0a0a" />
         )}
       </View>
       {label && (

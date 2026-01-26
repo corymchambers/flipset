@@ -35,7 +35,7 @@ export function Chip({
       <Text
         style={[
           styles.label,
-          { color: selected ? '#FFFFFF' : colors.text },
+          { color: selected ? '#0a0a0a' : colors.text },
         ]}
         numberOfLines={1}
       >
@@ -49,7 +49,7 @@ export function Chip({
           <Ionicons
             name="close-circle"
             size={18}
-            color={selected ? '#FFFFFF' : colors.textSecondary}
+            color={selected ? '#0a0a0a' : colors.textSecondary}
           />
         </TouchableOpacity>
       )}

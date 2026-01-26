@@ -58,7 +58,7 @@ export function Button({
 
     switch (variant) {
       case 'primary':
-        return '#FFFFFF';
+        return '#0a0a0a'; // Dark text on cyan
       case 'secondary':
         return colors.text;
       case 'danger':
@@ -66,7 +66,7 @@ export function Button({
       case 'ghost':
         return colors.primary;
       default:
-        return '#FFFFFF';
+        return '#0a0a0a';
     }
   };
 

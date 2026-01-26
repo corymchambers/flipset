@@ -2798,6 +2798,13 @@ expo-speech-recognition@^3.0.1:
   resolved "https://registry.yarnpkg.com/expo-speech-recognition/-/expo-speech-recognition-3.0.1.tgz#7d2f291fafca1f2ff2d3253c11bbd81742250c75"
   integrity sha512-sMyOE1Vq1635B2oG0irgv6MZo0axIva3yNMmy86fwSqcFI+y9GhfOqZnYx3PFq7A0tNP2AlaNZLA9+tkgBcLhQ==
 
+expo-splash-screen@~31.0.13:
+  version "31.0.13"
+  resolved "https://registry.yarnpkg.com/expo-splash-screen/-/expo-splash-screen-31.0.13.tgz#f41f1a4c8bb1ae7fcc52b760e7dd485d7ddec642"
+  integrity sha512-1epJLC1cDlwwj089R2h8cxaU5uk4ONVAC+vzGiTZH4YARQhL4Stlz1MbR6yAS173GMosvkE6CAeihR7oIbCkDA==
+  dependencies:
+    "@expo/prebuild-config" "^54.0.8"
+
 expo-sqlite@~16.0.10:
   version "16.0.10"
   resolved "https://registry.yarnpkg.com/expo-sqlite/-/expo-sqlite-16.0.10.tgz#dd3275e3b1f79063b6121fa3b11a074b7b84ce1f"

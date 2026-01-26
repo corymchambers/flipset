@@ -120,7 +120,7 @@ export default function CategoriesScreen() {
         onPress={() => router.push('/category/new')}
         activeOpacity={0.8}
       >
-        <Ionicons name="add" size={28} color="#FFFFFF" />
+        <Ionicons name="add" size={28} color="#0a0a0a" />
       </TouchableOpacity>
 
       {deleteDialog && (
