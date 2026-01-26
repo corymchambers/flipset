@@ -79,6 +79,17 @@ export function FlashcardView({
         style={styles.flipButton}
       />
 
+      <Button
+        title="Skip"
+        variant="secondary"
+        onPress={() => {
+          setShowBack(false);
+          onSkip();
+        }}
+        fullWidth
+        style={styles.skipButton}
+      />
+
       <View style={styles.actionButtons}>
         <Button
           title="Wrong"
@@ -86,15 +97,6 @@ export function FlashcardView({
           onPress={() => {
             setShowBack(false);
             onWrong();
-          }}
-          style={styles.actionButton}
-        />
-        <Button
-          title="Skip"
-          variant="secondary"
-          onPress={() => {
-            setShowBack(false);
-            onSkip();
           }}
           style={styles.actionButton}
         />
@@ -142,6 +144,9 @@ const styles = StyleSheet.create({
   },
   flipButton: {
     marginTop: Spacing.md,
+  },
+  skipButton: {
+    marginTop: Spacing.sm,
   },
   actionButtons: {
     flexDirection: 'row',
