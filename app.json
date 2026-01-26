@@ -15,7 +15,7 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.flipset.app"
+      "bundleIdentifier": "com.corychambers.flipset"
     },
     "android": {
       "adaptiveIcon": {
@@ -23,7 +23,7 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.flipset.app"
+      "package": "com.corychambers.flipset"
     },
     "web": {
       "favicon": "./assets/favicon.png",
