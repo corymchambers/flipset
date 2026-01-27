@@ -69,6 +69,16 @@ adb install android/app/build/outputs/apk/release/app-release.apk
 
 Or upload the APK to Google Drive/Dropbox and download on your device.
 
+### Android AAB (Google Play)
+
+Build a release AAB for Google Play:
+
+```bash
+cd android && ./gradlew bundleRelease
+```
+
+The AAB will be at `android/app/build/outputs/bundle/release/app-release.aab`. Upload this to Google Play Console.
+
 ### iOS (without TestFlight)
 
 1. Open the project in Xcode:
