@@ -4,14 +4,15 @@ import {
   Text,
   StyleSheet,
   Modal,
-  SafeAreaView,
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
   Alert,
   ActionSheetIOS,
   ActivityIndicator,
+  ScrollView,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { EnrichedTextInput } from 'react-native-enriched';
 import type { EnrichedTextInputInstance, OnChangeStateEvent } from 'react-native-enriched';
@@ -19,7 +20,7 @@ import {
   ExpoSpeechRecognitionModule,
   useSpeechRecognitionEvent,
 } from 'expo-speech-recognition';
-import * as ImagePicker from 'expo-image-picker';
+import ImagePicker from 'react-native-image-crop-picker';
 import { extractTextFromImage } from 'expo-text-extractor';
 import { useTheme } from '@/hooks';
 import { Spacing, FontSize, FontWeight, BorderRadius } from '@/constants/theme';
@@ -173,37 +174,24 @@ export function RichTextEditorModal({
 
   const pickImage = async (source: 'camera' | 'library') => {
     try {
-      // Request permissions
-      if (source === 'camera') {
-        const { status } = await ImagePicker.requestCameraPermissionsAsync();
-        if (status !== 'granted') {
-          Alert.alert('Permission Required', 'Camera permission is needed to take photos.');
-          return;
-        }
-      } else {
-        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-        if (status !== 'granted') {
-          Alert.alert('Permission Required', 'Photo library permission is needed to select images.');
-          return;
-        }
-      }
-
-      const options: ImagePicker.ImagePickerOptions = {
-        allowsEditing: true,
-        quality: 1,
+      const options = {
+        cropping: true,
+        freeStyleCropEnabled: true,
+        mediaType: 'photo' as const,
       };
 
       const result = source === 'camera'
-        ? await ImagePicker.launchCameraAsync(options)
-        : await ImagePicker.launchImageLibraryAsync(options);
+        ? await ImagePicker.openCamera(options)
+        : await ImagePicker.openPicker(options);
 
-      if (result.canceled || !result.assets || result.assets.length === 0) {
+      if (result && result.path) {
+        await processImageOCR(result.path);
+      }
+    } catch (error: any) {
+      // User cancelled
+      if (error?.code === 'E_PICKER_CANCELLED') {
         return;
       }
-
-      const imageUri = result.assets[0].uri;
-      await processImageOCR(imageUri);
-    } catch (error) {
       console.error('Image picker error:', error);
       Alert.alert('Error', 'Failed to pick image');
     }
@@ -405,16 +393,16 @@ const styles = StyleSheet.create({
   },
   toolbar: {
     flexDirection: 'row',
-    paddingVertical: Spacing.sm,
-    paddingHorizontal: Spacing.md,
-    gap: Spacing.sm,
+    paddingVertical: Spacing.xs,
+    paddingHorizontal: Spacing.sm,
+    gap: Spacing.xs,
     borderBottomWidth: 1,
   },
   toolbarButton: {
-    paddingHorizontal: Spacing.md,
+    paddingHorizontal: Spacing.sm,
     paddingVertical: Spacing.xs,
     borderRadius: BorderRadius.sm,
-    minWidth: 40,
+    minWidth: 32,
     alignItems: 'center',
   },
   toolbarButtonText: {

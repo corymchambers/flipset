@@ -32,12 +32,14 @@ export default function RootLayout() {
           name="card/new"
           options={{
             title: 'New Card',
+            headerBackTitle: 'Back',
           }}
         />
         <Stack.Screen
           name="card/[id]"
           options={{
             title: 'Edit Card',
+            headerBackTitle: 'Back',
           }}
         />
         <Stack.Screen

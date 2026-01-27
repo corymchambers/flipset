@@ -41,7 +41,11 @@ export function DeleteCategoryDialog({
   );
 
   const handleConfirm = () => {
-    onConfirm(selectedOption, targetCategoryId || undefined);
+    if (cardCount === 0) {
+      onConfirm('delete');
+    } else {
+      onConfirm(selectedOption, targetCategoryId || undefined);
+    }
   };
 
   return (
@@ -58,53 +62,62 @@ export function DeleteCategoryDialog({
               <Text style={[styles.title, { color: colors.text }]}>
                 Delete "{categoryName}"?
               </Text>
-              <Text style={[styles.message, { color: colors.textSecondary }]}>
-                This category has {cardCount} {cardCount === 1 ? 'card' : 'cards'}.
-                What would you like to do with {cardCount === 1 ? 'it' : 'them'}?
-              </Text>
 
-              <View style={styles.options}>
-                <View style={styles.option}>
-                  <RadioButton
-                    selected={selectedOption === 'uncategorize'}
-                    onSelect={() => setSelectedOption('uncategorize')}
-                    label="Move to Uncategorized"
-                  />
-                </View>
+              {cardCount === 0 ? (
+                <Text style={[styles.message, { color: colors.textSecondary }]}>
+                  This category is empty. Are you sure you want to delete it?
+                </Text>
+              ) : (
+                <>
+                  <Text style={[styles.message, { color: colors.textSecondary }]}>
+                    This category has {cardCount} {cardCount === 1 ? 'card' : 'cards'}.
+                    What would you like to do with {cardCount === 1 ? 'it' : 'them'}?
+                  </Text>
 
-                {otherCategories.length > 0 && (
-                  <View style={styles.option}>
-                    <RadioButton
-                      selected={selectedOption === 'move'}
-                      onSelect={() => setSelectedOption('move')}
-                      label="Move to another category"
-                    />
-                    {selectedOption === 'move' && (
-                      <ScrollView
-                        style={[styles.categoryList, { borderColor: colors.border }]}
-                        showsVerticalScrollIndicator={false}
-                      >
-                        {otherCategories.map((category) => (
-                          <RadioButton
-                            key={category.id}
-                            selected={targetCategoryId === category.id}
-                            onSelect={() => setTargetCategoryId(category.id)}
-                            label={category.name}
-                          />
-                        ))}
-                      </ScrollView>
+                  <View style={styles.options}>
+                    <View style={styles.option}>
+                      <RadioButton
+                        selected={selectedOption === 'uncategorize'}
+                        onSelect={() => setSelectedOption('uncategorize')}
+                        label="Move to Uncategorized"
+                      />
+                    </View>
+
+                    {otherCategories.length > 0 && (
+                      <View style={styles.option}>
+                        <RadioButton
+                          selected={selectedOption === 'move'}
+                          onSelect={() => setSelectedOption('move')}
+                          label="Move to another category"
+                        />
+                        {selectedOption === 'move' && (
+                          <ScrollView
+                            style={[styles.categoryList, { borderColor: colors.border }]}
+                            showsVerticalScrollIndicator={false}
+                          >
+                            {otherCategories.map((category) => (
+                              <RadioButton
+                                key={category.id}
+                                selected={targetCategoryId === category.id}
+                                onSelect={() => setTargetCategoryId(category.id)}
+                                label={category.name}
+                              />
+                            ))}
+                          </ScrollView>
+                        )}
+                      </View>
                     )}
-                  </View>
-                )}
 
-                <View style={styles.option}>
-                  <RadioButton
-                    selected={selectedOption === 'delete'}
-                    onSelect={() => setSelectedOption('delete')}
-                    label="Delete all cards in this category"
-                  />
-                </View>
-              </View>
+                    <View style={styles.option}>
+                      <RadioButton
+                        selected={selectedOption === 'delete'}
+                        onSelect={() => setSelectedOption('delete')}
+                        label="Delete all cards in this category"
+                      />
+                    </View>
+                  </View>
+                </>
+              )}
 
               <View style={styles.buttons}>
                 <Button
@@ -114,10 +127,10 @@ export function DeleteCategoryDialog({
                   style={styles.button}
                 />
                 <Button
-                  title="Confirm"
-                  variant={selectedOption === 'delete' ? 'danger' : 'primary'}
+                  title={cardCount === 0 ? 'Delete' : 'Confirm'}
+                  variant={cardCount === 0 || selectedOption === 'delete' ? 'danger' : 'primary'}
                   onPress={handleConfirm}
-                  disabled={selectedOption === 'move' && !targetCategoryId}
+                  disabled={cardCount > 0 && selectedOption === 'move' && !targetCategoryId}
                   style={styles.button}
                 />
               </View>

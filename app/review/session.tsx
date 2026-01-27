@@ -1,11 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   View,
   StyleSheet,
   Alert,
   ActivityIndicator,
 } from 'react-native';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { useTheme, useSession } from '@/hooks';
 import { Spacing } from '@/constants/theme';
 import { SessionOrderMode } from '@/types';
@@ -36,8 +36,11 @@ export default function ReviewSessionScreen() {
   const [deleteConfirm, setDeleteConfirm] = useState(false);
 
   useEffect(() => {
-    initSession();
-  }, []);
+    // Wait for session to load before initializing
+    if (!isLoading) {
+      initSession();
+    }
+  }, [isLoading]);
 
   const initSession = async () => {
     // If we have params, start a new session
@@ -88,11 +91,13 @@ export default function ReviewSessionScreen() {
   };
 
   // Refresh current card when returning from edit screen
-  useEffect(() => {
-    if (!initializing && currentCard) {
-      refreshCurrentCard();
-    }
-  }, [initializing]);
+  useFocusEffect(
+    useCallback(() => {
+      if (!initializing && currentCard) {
+        refreshCurrentCard();
+      }
+    }, [initializing, currentCard?.id])
+  );
 
   if (isLoading || initializing) {
     return (

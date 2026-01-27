@@ -97,13 +97,8 @@ export default function CategoriesScreen() {
                 }
               }}
               onDelete={
-                item.id !== UNCATEGORIZED_ID && item.card_count > 0
+                item.id !== UNCATEGORIZED_ID
                   ? () => setDeleteDialog(item)
-                  : item.id !== UNCATEGORIZED_ID
-                  ? async () => {
-                      await deleteCategory(item.id);
-                      loadCategories();
-                    }
                   : undefined
               }
             />

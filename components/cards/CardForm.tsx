@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   StyleSheet,
@@ -6,7 +6,7 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { useTheme } from '@/hooks';
 import { Spacing } from '@/constants/theme';
 import { Category, CardWithCategories } from '@/types';
@@ -33,10 +33,40 @@ export function CardForm({ cardId }: CardFormProps) {
   const [loading, setLoading] = useState(isEditing);
   const [saving, setSaving] = useState(false);
   const [editingField, setEditingField] = useState<EditingField>(null);
+  const [categoryIdsBeforeAdd, setCategoryIdsBeforeAdd] = useState<string[] | null>(null);
 
   useEffect(() => {
     loadData();
   }, [cardId]);
+
+  // Refresh categories when returning from add category screen
+  useFocusEffect(
+    useCallback(() => {
+      const refreshCategories = async () => {
+        const categoriesData = await getAllCategories();
+        const filteredCategories = categoriesData.filter(c => c.id !== UNCATEGORIZED_ID);
+
+        // Auto-select newly created category
+        if (categoryIdsBeforeAdd !== null) {
+          const newCategory = filteredCategories.find(
+            c => !categoryIdsBeforeAdd.includes(c.id)
+          );
+          if (newCategory) {
+            setSelectedCategories(prev => [...prev, newCategory.id]);
+          }
+          setCategoryIdsBeforeAdd(null);
+        }
+
+        setCategories(filteredCategories);
+      };
+      refreshCategories();
+    }, [categoryIdsBeforeAdd])
+  );
+
+  const handleAddCategory = () => {
+    setCategoryIdsBeforeAdd(categories.map(c => c.id));
+    router.push('/category/new');
+  };
 
   const loadData = async () => {
     try {
@@ -144,6 +174,7 @@ export function CardForm({ cardId }: CardFormProps) {
           categories={categories}
           selectedIds={selectedCategories}
           onToggle={toggleCategory}
+          onAddCategory={handleAddCategory}
         />
 
         <View style={styles.buttons}>

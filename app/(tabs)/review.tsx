@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  Alert,
   TouchableOpacity,
   Image,
 } from 'react-native';
@@ -15,7 +14,7 @@ import { useTheme, useSession } from '@/hooks';
 import { Spacing, FontSize, FontWeight, BorderRadius } from '@/constants/theme';
 import { CategoryWithCount, SessionOrderMode } from '@/types';
 import { getAllCategories, getCardsByCategories } from '@/database';
-import { Button, RadioButton, Card, EmptyState } from '@/components/ui';
+import { Button, RadioButton, Card, EmptyState, ConfirmDialog } from '@/components/ui';
 
 export default function ReviewScreen() {
   const { colors } = useTheme();
@@ -25,6 +24,7 @@ export default function ReviewScreen() {
   const [orderMode, setOrderMode] = useState<SessionOrderMode>('random');
   const [cardCount, setCardCount] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [endSessionDialog, setEndSessionDialog] = useState(false);
 
   const totalCards = categories.reduce((sum, c) => sum + c.card_count, 0);
 
@@ -92,18 +92,12 @@ export default function ReviewScreen() {
   };
 
   const handleEndSession = () => {
-    Alert.alert(
-      'End Session',
-      'Are you sure you want to end the current session?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'End Session',
-          style: 'destructive',
-          onPress: () => endSession(),
-        },
-      ]
-    );
+    setEndSessionDialog(true);
+  };
+
+  const confirmEndSession = () => {
+    endSession();
+    setEndSessionDialog(false);
   };
 
   if (totalCards === 0 && !hasActiveSession) {
@@ -293,6 +287,16 @@ export default function ReviewScreen() {
           size="lg"
         />
       </ScrollView>
+
+      <ConfirmDialog
+        visible={endSessionDialog}
+        title="End Session"
+        message="Are you sure you want to end the current session? Your progress will be lost."
+        confirmLabel="End Session"
+        confirmVariant="danger"
+        onConfirm={confirmEndSession}
+        onCancel={() => setEndSessionDialog(false)}
+      />
     </SafeAreaView>
   );
 }
