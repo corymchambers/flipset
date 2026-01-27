@@ -82,6 +82,33 @@ export function RichTextEditorModal({
     }
   });
 
+  const appendParagraphsToEditor = async (htmlParagraphs: string) => {
+    if (!editorRef.current) return;
+
+    const currentHtml = await editorRef.current.getHTML();
+
+    if (!currentHtml || currentHtml === '<p></p>' || currentHtml.trim() === '') {
+      editorRef.current.setValue(htmlParagraphs);
+    } else {
+      let newHtml = currentHtml;
+
+      // Remove </html> wrapper if present
+      const hasHtmlWrapper = newHtml.endsWith('</html>');
+      if (hasHtmlWrapper) {
+        newHtml = newHtml.slice(0, -7);
+      }
+
+      // Add the new paragraphs at the end (before </html> if it existed)
+      newHtml = newHtml.trimEnd() + '\n' + htmlParagraphs;
+
+      if (hasHtmlWrapper) {
+        newHtml += '</html>';
+      }
+
+      editorRef.current.setValue(newHtml);
+    }
+  };
+
   const appendTextToEditor = async (text: string) => {
     if (!editorRef.current) return;
 
@@ -91,17 +118,30 @@ export function RichTextEditorModal({
       editorRef.current.setValue(`<p>${text}</p>`);
     } else {
       let newHtml = currentHtml;
-      if (newHtml.endsWith('</html>')) {
+
+      // Remove </html> wrapper if present
+      const hasHtmlWrapper = newHtml.endsWith('</html>');
+      if (hasHtmlWrapper) {
         newHtml = newHtml.slice(0, -7);
       }
-      if (newHtml.endsWith('</p>')) {
-        newHtml = newHtml.slice(0, -4) + ' ' + text + '</p>';
+
+      // Find the last block-level closing tag (may have <br>, whitespace after it)
+      const blockTagMatch = newHtml.match(/<\/(p|h[1-6]|li|div|blockquote)>(?:\s|<br\s*\/?>)*/i);
+      if (blockTagMatch) {
+        // Find where the closing tag starts (not the trailing whitespace/br)
+        const closeTagOnly = `</${blockTagMatch[1]}>`;
+        const insertPos = newHtml.lastIndexOf(closeTagOnly);
+        newHtml = newHtml.slice(0, insertPos) + ' ' + text + newHtml.slice(insertPos);
       } else {
-        newHtml = newHtml + ' ' + text;
+        // Fallback: wrap in a new paragraph
+        newHtml = newHtml + `<p>${text}</p>`;
       }
-      if (currentHtml.endsWith('</html>')) {
+
+      // Restore </html> wrapper if it was there
+      if (hasHtmlWrapper) {
         newHtml += '</html>';
       }
+
       editorRef.current.setValue(newHtml);
     }
   };
@@ -202,18 +242,54 @@ export function RichTextEditorModal({
 
     try {
       const results = await extractTextFromImage(imageUri);
-      const extractedText = results.join(' ').trim();
 
-      if (!extractedText) {
+      if (!results.length) {
         Alert.alert('No Text Found', 'No text was detected in the image.');
+        setIsProcessingImage(false);
         return;
       }
 
-      await appendTextToEditor(extractedText);
+      // If only one line, just add it directly
+      if (results.length === 1) {
+        await appendTextToEditor(results[0].trim());
+        setIsProcessingImage(false);
+        return;
+      }
+
+      // Multiple lines - ask user how to handle
+      setIsProcessingImage(false);
+      Alert.alert(
+        'Multiple Lines Detected',
+        'How would you like to add the text?',
+        [
+          {
+            text: 'Keep Line Breaks',
+            onPress: async () => {
+              // Create separate paragraphs for each line
+              const paragraphs = results
+                .map(r => r.trim())
+                .filter(r => r)
+                .map(r => `<p>${r}</p>`)
+                .join('');
+              await appendParagraphsToEditor(paragraphs);
+            },
+          },
+          {
+            text: 'Combine into One Line',
+            onPress: async () => {
+              const combinedText = results.map(r => r.trim()).join(' ');
+              await appendTextToEditor(combinedText);
+            },
+          },
+          {
+            text: 'Cancel',
+            style: 'cancel',
+          },
+        ]
+      );
     } catch (error) {
       console.error('OCR error:', error);
       Alert.alert('Error', 'Failed to extract text from image');
-    } finally {
       setIsProcessingImage(false);
     }
   };

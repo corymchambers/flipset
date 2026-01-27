@@ -1,9 +1,6 @@
-import { Colors } from '@/constants/theme';
+import { useContext } from 'react';
+import { ThemeContext } from '@/contexts';
 
 export function useTheme() {
-  // Dark-only theme
-  return {
-    colors: Colors.dark,
-    isDark: true,
-  };
+  return useContext(ThemeContext);
 }

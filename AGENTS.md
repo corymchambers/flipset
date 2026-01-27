@@ -62,9 +62,13 @@ types/                  # TypeScript type definitions
 
 ## When Fixing Bugs
 
-1. **Check TESTING.md** for related test cases
-2. **Add new test cases** if the bug scenario wasn't covered
-3. **Test related functionality** to avoid regressions
+1. **Explain before fixing**: Before making any code changes, explain:
+   - What the bug is (root cause)
+   - What the proposed fix would be
+   - Wait for approval before implementing
+2. **Check TESTING.md** for related test cases
+3. **Add new test cases** if the bug scenario wasn't covered
+4. **Test related functionality** to avoid regressions
 
 ## Building
 

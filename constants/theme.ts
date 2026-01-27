@@ -1,27 +1,28 @@
 export const Colors = {
-  // Dark theme with cyan accent (pure black for max contrast)
+  // Light theme with cyan accent (darker for better contrast)
   light: {
-    primary: '#22D3EE',
-    primaryLight: '#67E8F9',
-    primaryDark: '#06B6D4',
+    primary: '#0891B2',
+    primaryLight: '#22D3EE',
+    primaryDark: '#0E7490',
     success: '#22C55E',
     successLight: '#4ADE80',
     error: '#EF4444',
     errorLight: '#F87171',
     warning: '#F59E0B',
-    background: '#0a0a0a',
-    surface: '#1a1a1a',
-    surfaceSecondary: '#2a2a2a',
-    text: '#FFFFFF',
-    textSecondary: '#A1A1AA',
-    textTertiary: '#71717A',
-    border: '#2a2a2a',
-    borderLight: '#1a1a1a',
-    icon: '#A1A1AA',
-    iconActive: '#22D3EE',
-    tabBar: '#0a0a0a',
-    tabBarBorder: '#1a1a1a',
+    background: '#F2F2F7',
+    surface: '#FFFFFF',
+    surfaceSecondary: '#E5E5EA',
+    text: '#1C1C1E',
+    textSecondary: '#6B7280',
+    textTertiary: '#9CA3AF',
+    border: '#E5E5EA',
+    borderLight: '#F2F2F7',
+    icon: '#6B7280',
+    iconActive: '#0891B2',
+    tabBar: '#FFFFFF',
+    tabBarBorder: '#E5E5EA',
   },
+  // Dark theme with cyan accent (pure black for max contrast)
   dark: {
     primary: '#22D3EE',
     primaryLight: '#67E8F9',
@@ -45,6 +46,8 @@ export const Colors = {
     tabBarBorder: '#1a1a1a',
   },
 };
+
+export type ThemeMode = 'light' | 'dark';
 
 export const Spacing = {
   xs: 4,

@@ -11,11 +11,13 @@ import {
   SafeAreaView,
   KeyboardAvoidingView,
   Platform,
+  Switch,
 } from 'react-native';
 import { File, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
 import * as Clipboard from 'expo-clipboard';
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/hooks';
 import { Spacing, FontSize, FontWeight, BorderRadius } from '@/constants/theme';
 import { exportData, findImportConflicts, importData } from '@/database';
@@ -23,7 +25,7 @@ import { Button, Card } from '@/components/ui';
 import { ImportConflictResolution, ExportData } from '@/types';
 
 export default function SettingsScreen() {
-  const { colors } = useTheme();
+  const { colors, isDark, setThemeMode } = useTheme();
   const [exporting, setExporting] = useState(false);
   const [importing, setImporting] = useState(false);
   const [pasteModalVisible, setPasteModalVisible] = useState(false);
@@ -239,6 +241,33 @@ export default function SettingsScreen() {
         style={[styles.container, { backgroundColor: colors.background }]}
         contentContainerStyle={styles.content}
       >
+        <Text style={[styles.sectionTitle, { color: colors.text, marginTop: 0 }]}>
+          Appearance
+        </Text>
+
+        <Card style={styles.card}>
+          <View style={styles.settingRow}>
+            <View style={styles.settingInfo}>
+              <Ionicons
+                name={isDark ? 'moon-outline' : 'sunny-outline'}
+                size={22}
+                color={colors.primary}
+                style={styles.settingIcon}
+              />
+              <Text style={[styles.settingLabel, { color: colors.text }]}>
+                Dark Mode
+              </Text>
+            </View>
+            <Switch
+              value={isDark}
+              onValueChange={(value) => setThemeMode(value ? 'dark' : 'light')}
+              trackColor={{ false: '#767577', true: colors.primary }}
+              thumbColor="#f4f3f4"
+              ios_backgroundColor="#767577"
+            />
+          </View>
+        </Card>
+
         <Text style={[styles.sectionTitle, { color: colors.text }]}>
           Data Management
         </Text>
@@ -390,6 +419,22 @@ const styles = StyleSheet.create({
   },
   button: {
     flex: 1,
+  },
+  settingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  settingInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  settingIcon: {
+    marginRight: Spacing.sm,
+  },
+  settingLabel: {
+    fontSize: FontSize.md,
+    fontWeight: FontWeight.medium,
   },
   modalContainer: {
     flex: 1,

@@ -1,10 +1,11 @@
 import { useEffect } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { ThemeProvider } from '@/contexts';
 import { useTheme } from '@/hooks';
 import { getDatabase } from '@/database';
 
-export default function RootLayout() {
+function AppContent() {
   const { colors, isDark } = useTheme();
 
   useEffect(() => {
@@ -65,5 +66,13 @@ export default function RootLayout() {
         />
       </Stack>
     </>
+  );
+}
+
+export default function RootLayout() {
+  return (
+    <ThemeProvider>
+      <AppContent />
+    </ThemeProvider>
   );
 }

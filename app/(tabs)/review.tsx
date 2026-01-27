@@ -17,7 +17,7 @@ import { getAllCategories, getCardsByCategories } from '@/database';
 import { Button, RadioButton, Card, EmptyState, ConfirmDialog } from '@/components/ui';
 
 export default function ReviewScreen() {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const { session, hasActiveSession, endSession } = useSession();
   const [categories, setCategories] = useState<CategoryWithCount[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
@@ -105,10 +105,16 @@ export default function ReviewScreen() {
       <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
         <View style={styles.content}>
           <View style={styles.header}>
-            <Image
-              source={require('@/assets/icons/icon-transparent.png')}
-              style={styles.logo}
-            />
+            {isDark ? (
+              <Image
+                source={require('@/assets/icons/icon-transparent.png')}
+                style={styles.logo}
+              />
+            ) : (
+              <View style={[styles.iconLogo, { backgroundColor: colors.surface }]}>
+                <Ionicons name="layers" size={40} color={colors.primary} />
+              </View>
+            )}
             <View>
               <Text style={[styles.appTitle, { color: colors.text }]}>FLIPSET</Text>
               <Text style={[styles.appSubtitle, { color: colors.textSecondary }]}>
@@ -136,10 +142,16 @@ export default function ReviewScreen() {
       >
         {/* Header */}
         <View style={styles.header}>
-        <Image
-          source={require('@/assets/icons/icon-transparent.png')}
-          style={styles.logo}
-        />
+        {isDark ? (
+          <Image
+            source={require('@/assets/icons/icon-transparent.png')}
+            style={styles.logo}
+          />
+        ) : (
+          <View style={[styles.iconLogo, { backgroundColor: colors.surface }]}>
+            <Ionicons name="layers" size={40} color={colors.primary} />
+          </View>
+        )}
         <View>
           <Text style={[styles.appTitle, { color: colors.text }]}>FLIPSET</Text>
           <Text style={[styles.appSubtitle, { color: colors.textSecondary }]}>
@@ -321,6 +333,13 @@ const styles = StyleSheet.create({
     width: 72,
     height: 72,
     borderRadius: BorderRadius.xl,
+  },
+  iconLogo: {
+    width: 72,
+    height: 72,
+    borderRadius: BorderRadius.xl,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   appTitle: {
     fontSize: FontSize.xxl,
