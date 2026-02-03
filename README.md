@@ -71,13 +71,107 @@ Or upload the APK to Google Drive/Dropbox and download on your device.
 
 ### Android AAB (Google Play)
 
-Build a release AAB for Google Play:
+#### 1. Generate Release Keystore (first time only)
+
+```bash
+keytool -genkeypair -v -storetype PKCS12 -keystore android/app/release.keystore -alias flipset -keyalg RSA -keysize 2048 -validity 10000
+```
+
+Remember the password you set. Add to `.gitignore`:
+
+```bash
+echo "android/app/release.keystore" >> .gitignore
+```
+
+**Back up the keystore** outside the project (it gets deleted with `prebuild --clean`):
+
+```bash
+cp android/app/release.keystore ~/flipset-release.keystore
+```
+
+#### 2. Add Credentials to `~/.gradle/gradle.properties`
+
+Store credentials in your **user-level** gradle.properties (not the project one) so they survive `prebuild --clean`:
+
+```bash
+echo "FLIPSET_UPLOAD_STORE_FILE=release.keystore" >> ~/.gradle/gradle.properties
+echo "FLIPSET_UPLOAD_KEY_ALIAS=flipset" >> ~/.gradle/gradle.properties
+echo "FLIPSET_UPLOAD_STORE_PASSWORD=your_password" >> ~/.gradle/gradle.properties
+echo "FLIPSET_UPLOAD_KEY_PASSWORD=your_password" >> ~/.gradle/gradle.properties
+```
+
+#### 3. Configure Signing in `android/app/build.gradle`
+
+Add `release` signing config:
+
+```groovy
+signingConfigs {
+    debug { ... }
+    release {
+        if (project.hasProperty('FLIPSET_UPLOAD_STORE_FILE')) {
+            storeFile file(FLIPSET_UPLOAD_STORE_FILE)
+            storePassword FLIPSET_UPLOAD_STORE_PASSWORD
+            keyAlias FLIPSET_UPLOAD_KEY_ALIAS
+            keyPassword FLIPSET_UPLOAD_KEY_PASSWORD
+        }
+    }
+}
+```
+
+Update `buildTypes.release`:
+
+```groovy
+release {
+    signingConfig signingConfigs.release
+    // ... rest of config
+}
+```
+
+#### 4. Build AAB
 
 ```bash
 cd android && ./gradlew bundleRelease
 ```
 
-The AAB will be at `android/app/build/outputs/bundle/release/app-release.aab`. Upload this to Google Play Console.
+The AAB will be at `android/app/build/outputs/bundle/release/app-release.aab`.
+
+#### 5. Upload to Google Play
+
+1. Go to Google Play Console
+2. Select your app → **Testing** → **Internal testing**
+3. **Create new release** → Upload the AAB
+4. Add testers under the **Testers** tab
+5. Share the opt-in link with testers
+
+**Important:** Back up your `release.keystore` file. Google Play App Signing manages the distribution key, but you need the upload key to publish updates.
+
+#### After Running `npx expo prebuild --clean`
+
+Running `prebuild --clean` deletes the entire `android/` folder. Your credentials are safe in `~/.gradle/gradle.properties`, but you need to:
+
+1. Copy your keystore back: `cp ~/path/to/backup/release.keystore android/app/`
+2. Re-add the signing config to `android/app/build.gradle`:
+
+1. In `signingConfigs`, add after `debug`:
+```groovy
+release {
+    if (project.hasProperty('FLIPSET_UPLOAD_STORE_FILE')) {
+        storeFile file(FLIPSET_UPLOAD_STORE_FILE)
+        storePassword FLIPSET_UPLOAD_STORE_PASSWORD
+        keyAlias FLIPSET_UPLOAD_KEY_ALIAS
+        keyPassword FLIPSET_UPLOAD_KEY_PASSWORD
+    }
+}
+```
+
+2. In `buildTypes.release`, change:
+```groovy
+signingConfig signingConfigs.debug
+```
+to:
+```groovy
+signingConfig signingConfigs.release
+```
 
 ### iOS (without TestFlight)
 
@@ -96,6 +190,16 @@ The AAB will be at `android/app/build/outputs/bundle/release/app-release.aab`. U
 4. Build and run (Cmd+R)
 
 Note: With a free Apple Developer account, apps expire after 7 days. A paid account ($99/year) removes this limitation.
+
+## Image-to-Text (OCR) Libraries
+
+The app uses `expo-image-picker` + `@bsky.app/expo-image-crop-tool` + `@react-native-ml-kit/text-recognition` for OCR.
+
+**Other libraries considered:**
+- `react-native-image-crop-picker` - Corrupts EXIF orientation on iOS, causing garbled OCR results
+- `expo-image-picker` with `allowsEditing: true` - Works but no drag handles for flexible cropping
+- `expo-text-extractor` - Vision Framework OCR, same iOS cropping issues as ML Kit
+- `expo-image-manipulator` - Tried to fix orientation post-crop, didn't resolve the issue
 
 ## Get a fresh project
 

@@ -11,6 +11,9 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.corychambers.flipset",
+      "buildNumber": "6",
+      "appleTeamId": "D8DX35HW6N",
+      "deploymentTarget": "15.5",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }

@@ -20,8 +20,9 @@ import {
   ExpoSpeechRecognitionModule,
   useSpeechRecognitionEvent,
 } from 'expo-speech-recognition';
-import ImagePicker from 'react-native-image-crop-picker';
-import { extractTextFromImage } from 'expo-text-extractor';
+import * as ExpoImagePicker from 'expo-image-picker';
+import ExpoImageCropTool from '@bsky.app/expo-image-crop-tool';
+import TextRecognition from '@react-native-ml-kit/text-recognition';
 import { useTheme } from '@/hooks';
 import { Spacing, FontSize, FontWeight, BorderRadius } from '@/constants/theme';
 
@@ -199,7 +200,6 @@ export function RichTextEditorModal({
         }
       );
     } else {
-      // Android: use Alert with buttons
       Alert.alert(
         'Select Image',
         'Choose an image source',
@@ -214,26 +214,31 @@ export function RichTextEditorModal({
 
   const pickImage = async (source: 'camera' | 'library') => {
     try {
-      const options = {
-        cropping: true,
-        freeStyleCropEnabled: true,
-        mediaType: 'photo' as const,
+      // Pick image without editing first
+      const options: ExpoImagePicker.ImagePickerOptions = {
+        allowsEditing: false,
+        quality: 1,
       };
 
       const result = source === 'camera'
-        ? await ImagePicker.openCamera(options)
-        : await ImagePicker.openPicker(options);
+        ? await ExpoImagePicker.launchCameraAsync(options)
+        : await ExpoImagePicker.launchImageLibraryAsync(options);
 
-      if (result && result.path) {
-        await processImageOCR(result.path);
+      if (!result.canceled && result.assets[0]?.uri) {
+        // Crop with Bluesky tool for flexible cropping with drag handles
+        const cropped = await ExpoImageCropTool.openCropperAsync({
+          imageUri: result.assets[0].uri,
+          format: 'jpeg',
+          compressImageQuality: 1,
+        });
+
+        if (cropped?.path) {
+          await processImageOCR(cropped.path);
+        }
       }
     } catch (error: any) {
-      // User cancelled
-      if (error?.code === 'E_PICKER_CANCELLED') {
-        return;
-      }
-      console.error('Image picker error:', error);
-      Alert.alert('Error', 'Failed to pick image');
+      console.error('Image crop error:', error);
+      Alert.alert('Error', 'Failed to crop image');
     }
   };
 
@@ -241,17 +246,31 @@ export function RichTextEditorModal({
     setIsProcessingImage(true);
 
     try {
-      const results = await extractTextFromImage(imageUri);
+      // Use ML Kit for both platforms
+      const uri = !imageUri.startsWith('file://')
+        ? `file://${imageUri}`
+        : imageUri;
+      const result = await TextRecognition.recognize(uri);
 
-      if (!results.length) {
+      const lines: string[] = [];
+      for (const block of result.blocks) {
+        for (const line of block.lines) {
+          const trimmed = line.text.trim();
+          if (trimmed) {
+            lines.push(trimmed);
+          }
+        }
+      }
+
+      if (!lines.length) {
         Alert.alert('No Text Found', 'No text was detected in the image.');
         setIsProcessingImage(false);
         return;
       }
 
       // If only one line, just add it directly
-      if (results.length === 1) {
-        await appendTextToEditor(results[0].trim());
+      if (lines.length === 1) {
+        await appendTextToEditor(lines[0]);
         setIsProcessingImage(false);
         return;
       }
@@ -266,9 +285,7 @@ export function RichTextEditorModal({
             text: 'Keep Line Breaks',
             onPress: async () => {
               // Create separate paragraphs for each line
-              const paragraphs = results
-                .map(r => r.trim())
-                .filter(r => r)
+              const paragraphs = lines
                 .map(r => `<p>${r}</p>`)
                 .join('');
               await appendParagraphsToEditor(paragraphs);
@@ -277,7 +294,7 @@ export function RichTextEditorModal({
           {
             text: 'Combine into One Line',
             onPress: async () => {
-              const combinedText = results.map(r => r.trim()).join(' ');
+              const combinedText = lines.join(' ');
               await appendTextToEditor(combinedText);
             },
           },
