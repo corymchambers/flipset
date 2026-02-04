@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   FlatList,
@@ -6,14 +6,15 @@ import {
   TouchableOpacity,
   Text,
   RefreshControl,
+  ScrollView,
 } from 'react-native';
-import { useFocusEffect, router } from 'expo-router';
+import { useFocusEffect, router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/hooks';
 import { Spacing, FontSize, FontWeight, BorderRadius } from '@/constants/theme';
-import { CardWithCategories, SortOptions, SortField, SortDirection } from '@/types';
-import { getAllCards, deleteCard } from '@/database';
-import { SearchBar, EmptyState, ConfirmDialog } from '@/components/ui';
+import { CardWithCategories, CategoryWithCount, SortOptions, SortField } from '@/types';
+import { getFilteredCards, getAllCategories, deleteCard } from '@/database';
+import { SearchBar, EmptyState, ConfirmDialog, Chip } from '@/components/ui';
 import { CardListItem } from '@/components/cards';
 
 const sortOptions: Array<{ field: SortField; label: string }> = [
@@ -24,26 +25,53 @@ const sortOptions: Array<{ field: SortField; label: string }> = [
 
 export default function CardsScreen() {
   const { colors } = useTheme();
+  const params = useLocalSearchParams<{ filterCategories?: string }>();
   const [cards, setCards] = useState<CardWithCategories[]>([]);
+  const [categories, setCategories] = useState<CategoryWithCount[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<SortOptions>({ field: 'alphabetical', direction: 'asc' });
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [showSortMenu, setShowSortMenu] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
+  // Handle filter categories from navigation params
+  useEffect(() => {
+    if (params.filterCategories) {
+      const categoryIds = params.filterCategories.split(',');
+      setSelectedCategoryIds(categoryIds);
+      // Clear the param to avoid re-applying on subsequent focus
+      router.setParams({ filterCategories: undefined });
+    }
+  }, [params.filterCategories]);
+
+  const loadCategories = useCallback(async () => {
+    try {
+      const data = await getAllCategories();
+      setCategories(data);
+    } catch (error) {
+      console.error('Failed to load categories:', error);
+    }
+  }, []);
+
   const loadCards = useCallback(async () => {
     try {
-      const data = await getAllCards(sortBy, searchQuery);
+      const data = await getFilteredCards(
+        sortBy,
+        searchQuery,
+        selectedCategoryIds.length > 0 ? selectedCategoryIds : undefined
+      );
       setCards(data);
     } catch (error) {
       console.error('Failed to load cards:', error);
     }
-  }, [sortBy, searchQuery]);
+  }, [sortBy, searchQuery, selectedCategoryIds]);
 
   useFocusEffect(
     useCallback(() => {
+      loadCategories();
       loadCards();
-    }, [loadCards])
+    }, [loadCategories, loadCards])
   );
 
   const handleRefresh = async () => {
@@ -76,6 +104,21 @@ export default function CardsScreen() {
     }));
     setShowSortMenu(false);
   };
+
+  const toggleCategoryFilter = (categoryId: string) => {
+    setSelectedCategoryIds(prev =>
+      prev.includes(categoryId)
+        ? prev.filter(id => id !== categoryId)
+        : [...prev, categoryId]
+    );
+  };
+
+  const clearFilters = () => {
+    setSearchQuery('');
+    setSelectedCategoryIds([]);
+  };
+
+  const hasActiveFilters = searchQuery.length > 0 || selectedCategoryIds.length > 0;
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -133,15 +176,41 @@ export default function CardsScreen() {
             ))}
           </View>
         )}
+
+        {categories.length > 0 && (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.filterRow}
+          >
+            <Chip
+              label="All"
+              selected={selectedCategoryIds.length === 0}
+              onPress={() => setSelectedCategoryIds([])}
+            />
+            {categories.map(category => (
+              <Chip
+                key={category.id}
+                label={`${category.name} (${category.card_count})`}
+                selected={selectedCategoryIds.includes(category.id)}
+                onPress={() => toggleCategoryFilter(category.id)}
+              />
+            ))}
+          </ScrollView>
+        )}
       </View>
 
       {cards.length === 0 ? (
         <EmptyState
           icon="albums-outline"
-          title={searchQuery ? 'No cards found' : 'No cards yet'}
-          description={searchQuery ? 'Try a different search term' : 'Create your first flashcard to get started'}
-          actionLabel={searchQuery ? undefined : 'Create Card'}
-          onAction={searchQuery ? undefined : () => router.push('/card/new')}
+          title={hasActiveFilters ? 'No cards found' : 'No cards yet'}
+          description={
+            hasActiveFilters
+              ? 'Try different search or filter options'
+              : 'Create your first flashcard to get started'
+          }
+          actionLabel={hasActiveFilters ? 'Clear Filters' : 'Create Card'}
+          onAction={hasActiveFilters ? clearFilters : () => router.push('/card/new')}
         />
       ) : (
         <FlatList
@@ -236,6 +305,10 @@ const styles = StyleSheet.create({
   },
   sortMenuItemText: {
     fontSize: FontSize.md,
+  },
+  filterRow: {
+    gap: Spacing.sm,
+    paddingVertical: Spacing.xs,
   },
   list: {
     padding: Spacing.md,

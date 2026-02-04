@@ -120,10 +120,19 @@ export function CardForm({ cardId }: CardFormProps) {
       setSaving(true);
       if (isEditing) {
         await updateCard(cardId, frontContent, backContent, selectedCategories);
+        router.back();
       } else {
         await createCard(frontContent, backContent, selectedCategories);
+        // Pass selected categories back to cards screen to auto-filter
+        if (selectedCategories.length > 0) {
+          router.replace({
+            pathname: '/(tabs)',
+            params: { filterCategories: selectedCategories.join(',') },
+          });
+        } else {
+          router.back();
+        }
       }
-      router.back();
     } catch (error) {
       console.error('Failed to save card:', error);
       Alert.alert('Error', 'Failed to save card. Please try again.');
@@ -156,14 +165,14 @@ export function CardForm({ cardId }: CardFormProps) {
         contentContainerStyle={styles.content}
       >
         <EditableRichTextField
-          label="Front (Term)"
+          label="Front"
           content={frontContent}
           placeholder="Tap to add the term or question..."
           onEdit={() => setEditingField('front')}
         />
 
         <EditableRichTextField
-          label="Back (Definition)"
+          label="Back"
           content={backContent}
           placeholder="Tap to add the definition or answer..."
           onEdit={() => setEditingField('back')}
@@ -195,7 +204,7 @@ export function CardForm({ cardId }: CardFormProps) {
 
       <RichTextEditorModal
         visible={editingField !== null}
-        title={editingField === 'front' ? 'Front (Term)' : 'Back (Definition)'}
+        title={editingField === 'front' ? 'Front' : 'Back'}
         initialValue={editingField === 'front' ? frontContent : backContent}
         placeholder={editingField === 'front' ? 'Enter the term or question...' : 'Enter the definition or answer...'}
         onSave={handleEditorSave}

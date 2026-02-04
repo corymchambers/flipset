@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Crypto from 'expo-crypto';
-import { SessionState, SessionOrderMode, Card } from '@/types';
+import { SessionState, SessionOrderMode, CardWithCategories } from '@/types';
 import { SESSION_STORAGE_KEY } from '@/constants';
 import { getCardsByCategories, getCardById } from '@/database';
 
@@ -16,7 +16,7 @@ function shuffleArray<T>(array: T[]): T[] {
 
 export function useSession() {
   const [session, setSession] = useState<SessionState | null>(null);
-  const [currentCard, setCurrentCard] = useState<Card | null>(null);
+  const [currentCard, setCurrentCard] = useState<CardWithCategories | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   // Load session from storage on mount

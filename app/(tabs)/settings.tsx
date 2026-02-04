@@ -13,6 +13,7 @@ import {
   Platform,
   Switch,
 } from 'react-native';
+import Constants from 'expo-constants';
 import { File, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
@@ -331,7 +332,7 @@ export default function SettingsScreen() {
             Flipset
           </Text>
           <Text style={[styles.cardDescription, { color: colors.textSecondary }]}>
-            Version 1.0.0
+            Version {Constants.expoConfig?.version} ({Constants.expoConfig?.ios?.buildNumber || Constants.expoConfig?.android?.versionCode})
           </Text>
           <Text style={[styles.cardDescription, { color: colors.textSecondary }]}>
             A simple, offline-first flashcard app for effective learning.

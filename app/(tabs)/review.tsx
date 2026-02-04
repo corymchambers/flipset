@@ -22,6 +22,7 @@ export default function ReviewScreen() {
   const [categories, setCategories] = useState<CategoryWithCount[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [orderMode, setOrderMode] = useState<SessionOrderMode>('random');
+  const [showFirstSide, setShowFirstSide] = useState<'front' | 'back'>('front');
   const [cardCount, setCardCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [endSessionDialog, setEndSessionDialog] = useState(false);
@@ -83,6 +84,7 @@ export default function ReviewScreen() {
       params: {
         categories: selectedCategories.join(','),
         orderMode,
+        showFirstSide,
       },
     });
   };
@@ -262,11 +264,11 @@ export default function ReviewScreen() {
       )}
 
       {/* Card Order */}
-      <Text style={[styles.sectionTitle, { color: colors.text, marginTop: Spacing.lg }]}>
+      <Text style={[styles.sectionTitle, { color: colors.text, marginTop: Spacing.xl }]}>
         Card Order
       </Text>
 
-      <Card style={styles.orderCard}>
+      <Card style={styles.optionCard}>
         <View style={styles.orderOption}>
           <RadioButton
             selected={orderMode === 'random'}
@@ -279,6 +281,28 @@ export default function ReviewScreen() {
             selected={orderMode === 'ordered'}
             onSelect={() => setOrderMode('ordered')}
             label="Ordered (as added)"
+          />
+        </View>
+      </Card>
+
+      {/* Show First */}
+      <Text style={[styles.sectionTitle, { color: colors.text, marginTop: Spacing.lg }]}>
+        Show First
+      </Text>
+
+      <Card style={styles.optionCard}>
+        <View style={styles.orderOption}>
+          <RadioButton
+            selected={showFirstSide === 'front'}
+            onSelect={() => setShowFirstSide('front')}
+            label="Front of card"
+          />
+        </View>
+        <View style={styles.orderOption}>
+          <RadioButton
+            selected={showFirstSide === 'back'}
+            onSelect={() => setShowFirstSide('back')}
+            label="Back of card"
           />
         </View>
       </Card>
@@ -440,8 +464,8 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     padding: Spacing.md,
   },
-  orderCard: {
-    marginBottom: Spacing.lg,
+  optionCard: {
+    marginTop: Spacing.sm,
   },
   orderOption: {
     paddingVertical: Spacing.sm,

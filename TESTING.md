@@ -6,8 +6,8 @@ Manual testing checklist for the Flipset flashcard app. Update this file as new 
 
 ### Creating Cards
 - [ ] Tap "+" to create a new card
-- [ ] Add content to front (term) field using rich text editor
-- [ ] Add content to back (definition) field using rich text editor
+- [ ] Add content to front field using rich text editor
+- [ ] Add content to back field using rich text editor
 - [ ] Select one or more categories
 - [ ] Create a new category inline via "Add" button
 - [ ] Verify newly created category is auto-selected

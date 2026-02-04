@@ -235,6 +235,89 @@ export async function getCardById(id: string): Promise<CardWithCategories | null
   return { ...card, categories };
 }
 
+export async function getFilteredCards(
+  sortOptions: SortOptions = { field: 'alphabetical', direction: 'asc' },
+  searchQuery?: string,
+  categoryIds?: string[]
+): Promise<CardWithCategories[]> {
+  const db = await getDatabase();
+
+  // Build ORDER BY clause
+  let orderBy: string;
+  switch (sortOptions.field) {
+    case 'alphabetical':
+      orderBy = `c.front_content COLLATE NOCASE ${sortOptions.direction.toUpperCase()}`;
+      break;
+    case 'created_at':
+      orderBy = `c.created_at ${sortOptions.direction.toUpperCase()}`;
+      break;
+    case 'updated_at':
+      orderBy = `c.updated_at ${sortOptions.direction.toUpperCase()}`;
+      break;
+    default:
+      orderBy = 'c.front_content COLLATE NOCASE ASC';
+  }
+
+  const whereClauses: string[] = [];
+  const params: (string | number)[] = [];
+
+  // Search filter
+  if (searchQuery && searchQuery.trim()) {
+    const search = `%${searchQuery.trim()}%`;
+    whereClauses.push('(c.front_content LIKE ? OR c.back_content LIKE ?)');
+    params.push(search, search);
+  }
+
+  // Category filter
+  if (categoryIds && categoryIds.length > 0) {
+    const hasUncategorized = categoryIds.includes(UNCATEGORIZED_ID);
+    const realCategoryIds = categoryIds.filter(id => id !== UNCATEGORIZED_ID);
+
+    const categoryConditions: string[] = [];
+
+    if (realCategoryIds.length > 0) {
+      const placeholders = realCategoryIds.map(() => '?').join(',');
+      categoryConditions.push(
+        `c.id IN (SELECT card_id FROM card_categories WHERE category_id IN (${placeholders}))`
+      );
+      params.push(...realCategoryIds);
+    }
+
+    if (hasUncategorized) {
+      categoryConditions.push(
+        'c.id NOT IN (SELECT DISTINCT card_id FROM card_categories)'
+      );
+    }
+
+    if (categoryConditions.length > 0) {
+      whereClauses.push(`(${categoryConditions.join(' OR ')})`);
+    }
+  }
+
+  const whereClause = whereClauses.length > 0
+    ? `WHERE ${whereClauses.join(' AND ')}`
+    : '';
+
+  const cards = await db.getAllAsync<Card>(
+    `SELECT c.* FROM cards c ${whereClause} ORDER BY ${orderBy}`,
+    params
+  );
+
+  // Get categories for each card
+  const cardsWithCategories: CardWithCategories[] = [];
+  for (const card of cards) {
+    const categories = await db.getAllAsync<Category>(`
+      SELECT cat.* FROM categories cat
+      INNER JOIN card_categories cc ON cat.id = cc.category_id
+      WHERE cc.card_id = ?
+      ORDER BY cat.name COLLATE NOCASE ASC
+    `, [card.id]);
+    cardsWithCategories.push({ ...card, categories });
+  }
+
+  return cardsWithCategories;
+}
+
 export async function getCardsByCategories(categoryIds: string[]): Promise<Card[]> {
   const db = await getDatabase();
 

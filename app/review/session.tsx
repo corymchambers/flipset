@@ -15,7 +15,8 @@ import { FlashcardView, ProgressBar, SessionComplete } from '@/components/review
 
 export default function ReviewSessionScreen() {
   const { colors } = useTheme();
-  const params = useLocalSearchParams<{ categories?: string; orderMode?: string }>();
+  const params = useLocalSearchParams<{ categories?: string; orderMode?: string; showFirstSide?: string }>();
+  const showFirstSide = (params.showFirstSide as 'front' | 'back') || 'front';
   const {
     session,
     currentCard,
@@ -157,6 +158,7 @@ export default function ReviewSessionScreen() {
 
         <FlashcardView
           card={currentCard}
+          showFirstSide={showFirstSide}
           onCorrect={markCorrect}
           onWrong={markWrong}
           onSkip={skipCard}

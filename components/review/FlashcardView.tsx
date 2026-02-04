@@ -10,14 +10,15 @@ import {
 } from 'react-native';
 import { useTheme } from '@/hooks';
 import { Spacing, BorderRadius, FontSize, FontWeight } from '@/constants/theme';
-import { Card } from '@/types';
+import { CardWithCategories } from '@/types';
 import { Button } from '@/components/ui';
 import { RichTextRenderer } from '@/components/editor';
 
-const SWIPE_THRESHOLD = 100;
+const SWIPE_THRESHOLD = 80;
 
 interface FlashcardViewProps {
-  card: Card;
+  card: CardWithCategories;
+  showFirstSide?: 'front' | 'back';
   onCorrect: () => void;
   onWrong: () => void;
   onSkip: () => void;
@@ -27,6 +28,7 @@ interface FlashcardViewProps {
 
 export function FlashcardView({
   card,
+  showFirstSide = 'front',
   onCorrect,
   onWrong,
   onSkip,
@@ -35,48 +37,30 @@ export function FlashcardView({
 }: FlashcardViewProps) {
   const { colors } = useTheme();
   const { height, width } = useWindowDimensions();
-  const [showBack, setShowBack] = useState(false);
+  const [showBack, setShowBack] = useState(showFirstSide === 'back');
 
   const cardHeight = Math.min(height * 0.45, 400);
 
   // Animation values
   const pan = useRef(new Animated.ValueXY()).current;
-  const cardOpacity = useRef(new Animated.Value(1)).current;
-
-  // Store callbacks in refs to avoid stale closures in panResponder
-  const onCorrectRef = useRef(onCorrect);
-  const onWrongRef = useRef(onWrong);
-  onCorrectRef.current = onCorrect;
-  onWrongRef.current = onWrong;
 
   // Reset animation when card changes
   useEffect(() => {
     pan.setValue({ x: 0, y: 0 });
-    cardOpacity.setValue(1);
-    setShowBack(false);
-  }, [card.id]);
+    setShowBack(showFirstSide === 'back');
+  }, [card.id, showFirstSide]);
 
-  const handleSwipeComplete = (direction: 'left' | 'right') => {
-    const toValue = direction === 'left' ? -width : width;
+  const flipCard = () => {
+    setShowBack(!showBack);
+  };
 
-    Animated.parallel([
-      Animated.timing(pan.x, {
-        toValue,
-        duration: 200,
-        useNativeDriver: true,
-      }),
-      Animated.timing(cardOpacity, {
-        toValue: 0,
-        duration: 200,
-        useNativeDriver: true,
-      }),
-    ]).start(() => {
-      if (direction === 'left') {
-        onWrongRef.current();
-      } else {
-        onCorrectRef.current();
-      }
-    });
+  const handleSwipeComplete = () => {
+    // Flip immediately, then animate back to center
+    setShowBack(prev => !prev);
+    Animated.spring(pan, {
+      toValue: { x: 0, y: 0 },
+      useNativeDriver: true,
+    }).start();
   };
 
   const panResponder = useRef(
@@ -89,34 +73,9 @@ export function FlashcardView({
         useNativeDriver: false,
       }),
       onPanResponderRelease: (_, gestureState) => {
-        if (gestureState.dx > SWIPE_THRESHOLD) {
-          // Swipe right = correct
-          Animated.parallel([
-            Animated.timing(pan.x, {
-              toValue: width,
-              duration: 200,
-              useNativeDriver: true,
-            }),
-            Animated.timing(cardOpacity, {
-              toValue: 0,
-              duration: 200,
-              useNativeDriver: true,
-            }),
-          ]).start(() => onCorrectRef.current());
-        } else if (gestureState.dx < -SWIPE_THRESHOLD) {
-          // Swipe left = wrong
-          Animated.parallel([
-            Animated.timing(pan.x, {
-              toValue: -width,
-              duration: 200,
-              useNativeDriver: true,
-            }),
-            Animated.timing(cardOpacity, {
-              toValue: 0,
-              duration: 200,
-              useNativeDriver: true,
-            }),
-          ]).start(() => onWrongRef.current());
+        if (Math.abs(gestureState.dx) > SWIPE_THRESHOLD) {
+          // Swipe triggers flip
+          handleSwipeComplete();
         } else {
           Animated.spring(pan, {
             toValue: { x: 0, y: 0 },
@@ -130,22 +89,35 @@ export function FlashcardView({
   // Interpolate rotation based on swipe
   const rotate = pan.x.interpolate({
     inputRange: [-width / 2, 0, width / 2],
-    outputRange: ['-10deg', '0deg', '10deg'],
+    outputRange: ['-5deg', '0deg', '5deg'],
     extrapolate: 'clamp',
   });
 
-  // Overlay opacity for visual feedback
-  const correctOverlayOpacity = pan.x.interpolate({
-    inputRange: [0, SWIPE_THRESHOLD],
-    outputRange: [0, 0.3],
-    extrapolate: 'clamp',
-  });
+  const handleMarkWrong = () => {
+    Animated.parallel([
+      Animated.timing(pan.x, {
+        toValue: -width,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      pan.setValue({ x: 0, y: 0 });
+      onWrong();
+    });
+  };
 
-  const wrongOverlayOpacity = pan.x.interpolate({
-    inputRange: [-SWIPE_THRESHOLD, 0],
-    outputRange: [0.3, 0],
-    extrapolate: 'clamp',
-  });
+  const handleMarkCorrect = () => {
+    Animated.parallel([
+      Animated.timing(pan.x, {
+        toValue: width,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      pan.setValue({ x: 0, y: 0 });
+      onCorrect();
+    });
+  };
 
   return (
     <View style={styles.container}>
@@ -157,27 +129,10 @@ export function FlashcardView({
             backgroundColor: colors.surface,
             borderColor: colors.border,
             height: cardHeight,
-            opacity: cardOpacity,
             transform: [{ translateX: pan.x }, { rotate }],
           },
         ]}
       >
-        {/* Correct overlay (green) */}
-        <Animated.View
-          style={[
-            styles.swipeOverlay,
-            { backgroundColor: colors.success, opacity: correctOverlayOpacity },
-          ]}
-          pointerEvents="none"
-        />
-        {/* Wrong overlay (red) */}
-        <Animated.View
-          style={[
-            styles.swipeOverlay,
-            { backgroundColor: colors.error, opacity: wrongOverlayOpacity },
-          ]}
-          pointerEvents="none"
-        />
         <View style={styles.cardHeader}>
           <Text style={[styles.cardLabel, { color: colors.textTertiary }]}>
             {showBack ? 'Back' : 'Front'}
@@ -206,19 +161,33 @@ export function FlashcardView({
             content={showBack ? card.back_content : card.front_content}
           />
         </ScrollView>
+        {card.categories.length > 0 && (
+          <View style={styles.categoriesRow}>
+            {card.categories.map(category => (
+              <View
+                key={category.id}
+                style={[styles.categoryChip, { backgroundColor: colors.primaryLight + '30' }]}
+              >
+                <Text style={[styles.categoryChipText, { color: colors.primary }]}>
+                  {category.name}
+                </Text>
+              </View>
+            ))}
+          </View>
+        )}
       </Animated.View>
 
       {/* Swipe hint */}
       <View style={styles.swipeHint}>
         <Text style={[styles.swipeHintText, { color: colors.textTertiary }]}>
-          Swipe left for wrong, right for correct
+          Swipe to flip card
         </Text>
       </View>
 
       <Button
         title={showBack ? 'Show Front' : 'Show Back'}
         variant="secondary"
-        onPress={() => setShowBack(!showBack)}
+        onPress={flipCard}
         fullWidth
         style={styles.flipButton}
       />
@@ -238,12 +207,12 @@ export function FlashcardView({
         <Button
           title="Wrong"
           variant="danger"
-          onPress={() => handleSwipeComplete('left')}
+          onPress={handleMarkWrong}
           style={styles.actionButton}
         />
         <Button
           title="Correct"
-          onPress={() => handleSwipeComplete('right')}
+          onPress={handleMarkCorrect}
           style={[styles.actionButton, { backgroundColor: colors.success }]}
         />
       </View>
@@ -259,11 +228,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: BorderRadius.xl,
     overflow: 'hidden',
-  },
-  swipeOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    borderRadius: BorderRadius.xl,
-    zIndex: 10,
   },
   swipeHint: {
     alignItems: 'center',
@@ -291,6 +255,22 @@ const styles = StyleSheet.create({
   cardContent: {
     flex: 1,
     padding: Spacing.md,
+  },
+  categoriesRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.xs,
+    paddingHorizontal: Spacing.md,
+    paddingBottom: Spacing.sm,
+  },
+  categoryChip: {
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: Spacing.xs / 2,
+    borderRadius: BorderRadius.sm,
+  },
+  categoryChipText: {
+    fontSize: FontSize.xs,
+    fontWeight: FontWeight.medium,
   },
   flipButton: {
     marginTop: Spacing.md,
