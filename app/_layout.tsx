@@ -1,17 +1,37 @@
 import { useEffect } from 'react';
+import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { ThemeProvider } from '@/contexts';
+import { ThemeProvider, OnboardingProvider, useOnboardingContext } from '@/contexts';
 import { useTheme } from '@/hooks';
 import { getDatabase } from '@/database';
+import { OnboardingScreen } from '@/components/onboarding';
 
 function AppContent() {
   const { colors, isDark } = useTheme();
+  const { isLoading, showOnboarding, completeOnboarding } = useOnboardingContext();
 
   useEffect(() => {
     // Initialize database on app start
     getDatabase().catch(console.error);
   }, []);
+
+  if (isLoading) {
+    return (
+      <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
+
+  if (showOnboarding) {
+    return (
+      <>
+        <StatusBar style={isDark ? 'light' : 'dark'} />
+        <OnboardingScreen onComplete={completeOnboarding} />
+      </>
+    );
+  }
 
   return (
     <>
@@ -72,7 +92,17 @@ function AppContent() {
 export default function RootLayout() {
   return (
     <ThemeProvider>
-      <AppContent />
+      <OnboardingProvider>
+        <AppContent />
+      </OnboardingProvider>
     </ThemeProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+});

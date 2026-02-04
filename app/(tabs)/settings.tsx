@@ -20,6 +20,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import * as Clipboard from 'expo-clipboard';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/hooks';
+import { useOnboardingContext } from '@/contexts';
 import { Spacing, FontSize, FontWeight, BorderRadius } from '@/constants/theme';
 import { exportData, findImportConflicts, importData } from '@/database';
 import { Button, Card } from '@/components/ui';
@@ -27,6 +28,7 @@ import { ImportConflictResolution, ExportData } from '@/types';
 
 export default function SettingsScreen() {
   const { colors, isDark, setThemeMode } = useTheme();
+  const { showOnboardingAgain } = useOnboardingContext();
   const [exporting, setExporting] = useState(false);
   const [importing, setImporting] = useState(false);
   const [pasteModalVisible, setPasteModalVisible] = useState(false);
@@ -337,6 +339,12 @@ export default function SettingsScreen() {
           <Text style={[styles.cardDescription, { color: colors.textSecondary }]}>
             A simple, offline-first flashcard app for effective learning.
           </Text>
+          <Button
+            title="View Welcome Screen"
+            variant="secondary"
+            onPress={showOnboardingAgain}
+            style={styles.welcomeButton}
+          />
         </Card>
       </ScrollView>
 
@@ -413,6 +421,9 @@ const styles = StyleSheet.create({
     fontSize: FontSize.sm,
     marginBottom: Spacing.md,
     lineHeight: FontSize.sm * 1.5,
+  },
+  welcomeButton: {
+    marginTop: Spacing.sm,
   },
   buttonRow: {
     flexDirection: 'row',

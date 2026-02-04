@@ -40,6 +40,20 @@ Manual testing checklist for the Flipset flashcard app. Update this file as new 
 - [ ] Confirm deletion dialog appears
 - [ ] Card is removed from all views after deletion
 
+### Cards List Filtering
+- [ ] Search bar filters cards by content
+- [ ] Direction button toggles ascending/descending
+- [ ] Sort button opens action sheet
+- [ ] Sort by Alphabetical works
+- [ ] Sort by Date Created works
+- [ ] Sort by Date Modified works
+- [ ] Category button opens action sheet with checkboxes
+- [ ] Select/deselect categories to filter
+- [ ] "Clear" button clears category selection
+- [ ] Multiple categories filter with OR logic
+- [ ] Filter + search work together
+- [ ] "Clear Filters" appears when filters active
+
 ## Categories
 
 ### Creating Categories
@@ -69,17 +83,18 @@ Manual testing checklist for the Flipset flashcard app. Update this file as new 
 - [ ] Card count updates as categories are selected
 - [ ] Choose "Randomized" order
 - [ ] Choose "Ordered" order
+- [ ] Choose "Show First" - Front of card
+- [ ] Choose "Show First" - Back of card
 - [ ] Start session button works
 
 ### During a Session
-- [ ] Card front is displayed initially
-- [ ] "Show Back" reveals the answer
-- [ ] "Show Front" returns to the question
-- [ ] Swipe right marks card as correct (green overlay)
-- [ ] Swipe left marks card as wrong (red overlay)
-- [ ] "Correct" button works
-- [ ] "Wrong" button works
-- [ ] "Skip" button moves to next card
+- [ ] Card displays based on "Show First" setting (front or back)
+- [ ] Categories are displayed on the flashcard
+- [ ] "Show Back" / "Show Front" button flips the card
+- [ ] Swipe left or right flips the card (not correct/wrong)
+- [ ] "Correct" button marks card and animates to next
+- [ ] "Wrong" button marks card and animates to next
+- [ ] "Skip" button moves card to end of round
 - [ ] Progress bar updates correctly
 - [ ] Round counter increments when all cards reviewed
 - [ ] Wrong cards return in subsequent rounds
@@ -99,7 +114,35 @@ Manual testing checklist for the Flipset flashcard app. Update this file as new 
 - [ ] "Start Over" restarts the session
 - [ ] "Finish" returns to Review tab
 
+## Onboarding
+
+### First Launch
+- [ ] Onboarding appears on first app launch
+- [ ] 5 screens display with correct content
+- [ ] Swipe left/right navigates between screens
+- [ ] Dots indicator shows current position
+- [ ] "Next" button advances to next screen
+- [ ] "Skip" button (top right) completes onboarding
+- [ ] "Get Started" button on last screen completes onboarding
+- [ ] After completion, main app is shown
+- [ ] Onboarding does not reappear on subsequent launches
+
+### View Welcome Screen (Settings)
+- [ ] "View Welcome Screen" button in About section
+- [ ] Tapping shows onboarding again
+- [ ] Can navigate through all screens
+- [ ] Completing returns to Settings
+
 ## Settings
+
+### Theme
+- [ ] Dark/Light mode toggle works
+- [ ] Theme persists after app restart
+
+### About
+- [ ] Version number displays correctly
+- [ ] Build number displays in parentheses
+- [ ] "View Welcome Screen" button works
 
 ### Export
 - [ ] "Share File" exports JSON and opens share sheet
