@@ -17,10 +17,12 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
    ```bash
    EXPO_PUBLIC_WEB3FORMS_KEY=your_key_here
    EXPO_PUBLIC_FEEDBACK_EMAIL=your_email@example.com
+   EXPO_PUBLIC_SENTRY_DSN=your_sentry_dsn_here
    ```
 
    - `EXPO_PUBLIC_WEB3FORMS_KEY` - API key for the feedback form. Get a free key at https://web3forms.com
    - `EXPO_PUBLIC_FEEDBACK_EMAIL` - Email address to receive user feedback
+   - `EXPO_PUBLIC_SENTRY_DSN` - Sentry DSN for error logging. Get one at https://sentry.io
 
 3. Start the app
 
