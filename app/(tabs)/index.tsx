@@ -6,7 +6,9 @@ import {
   TouchableOpacity,
   Text,
   RefreshControl,
+  Modal,
   ScrollView,
+  Pressable,
 } from 'react-native';
 import { useFocusEffect, router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -14,13 +16,13 @@ import { useTheme } from '@/hooks';
 import { Spacing, FontSize, FontWeight, BorderRadius } from '@/constants/theme';
 import { CardWithCategories, CategoryWithCount, SortOptions, SortField } from '@/types';
 import { getFilteredCards, getAllCategories, deleteCard } from '@/database';
-import { SearchBar, EmptyState, ConfirmDialog, Chip } from '@/components/ui';
+import { SearchBar, EmptyState, ConfirmDialog } from '@/components/ui';
 import { CardListItem } from '@/components/cards';
 
 const sortOptions: Array<{ field: SortField; label: string }> = [
-  { field: 'alphabetical', label: 'A-Z' },
-  { field: 'created_at', label: 'Created' },
-  { field: 'updated_at', label: 'Modified' },
+  { field: 'alphabetical', label: 'Alphabetical (A-Z)' },
+  { field: 'created_at', label: 'Date Created' },
+  { field: 'updated_at', label: 'Date Modified' },
 ];
 
 export default function CardsScreen() {
@@ -32,7 +34,8 @@ export default function CardsScreen() {
   const [sortBy, setSortBy] = useState<SortOptions>({ field: 'alphabetical', direction: 'asc' });
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
   const [refreshing, setRefreshing] = useState(false);
-  const [showSortMenu, setShowSortMenu] = useState(false);
+  const [showSortSheet, setShowSortSheet] = useState(false);
+  const [showCategorySheet, setShowCategorySheet] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
   // Handle filter categories from navigation params
@@ -90,19 +93,19 @@ export default function CardsScreen() {
     }
   };
 
+  const handleSortChange = (field: SortField) => {
+    setSortBy(prev => ({
+      field,
+      direction: 'asc',
+    }));
+    setShowSortSheet(false);
+  };
+
   const toggleSortDirection = () => {
     setSortBy(prev => ({
       ...prev,
       direction: prev.direction === 'asc' ? 'desc' : 'asc',
     }));
-  };
-
-  const handleSortChange = (field: SortField) => {
-    setSortBy(prev => ({
-      field,
-      direction: prev.field === field ? (prev.direction === 'asc' ? 'desc' : 'asc') : 'asc',
-    }));
-    setShowSortMenu(false);
   };
 
   const toggleCategoryFilter = (categoryId: string) => {
@@ -120,6 +123,20 @@ export default function CardsScreen() {
 
   const hasActiveFilters = searchQuery.length > 0 || selectedCategoryIds.length > 0;
 
+  const getSortLabel = () => {
+    const option = sortOptions.find(o => o.field === sortBy.field);
+    return option?.label || 'Sort';
+  };
+
+  const getCategoryLabel = () => {
+    if (selectedCategoryIds.length === 0) return 'All Categories';
+    if (selectedCategoryIds.length === 1) {
+      const cat = categories.find(c => c.id === selectedCategoryIds[0]);
+      return cat?.name || '1 selected';
+    }
+    return `${selectedCategoryIds.length} selected`;
+  };
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.header}>
@@ -128,16 +145,7 @@ export default function CardsScreen() {
           onChangeText={setSearchQuery}
           placeholder="Search cards..."
         />
-        <View style={styles.sortRow}>
-          <TouchableOpacity
-            style={[styles.sortButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
-            onPress={() => setShowSortMenu(!showSortMenu)}
-          >
-            <Text style={[styles.sortButtonText, { color: colors.text }]}>
-              {sortOptions.find(o => o.field === sortBy.field)?.label}
-            </Text>
-            <Ionicons name="chevron-down" size={16} color={colors.textSecondary} />
-          </TouchableOpacity>
+        <View style={styles.filterRow}>
           <TouchableOpacity
             style={[styles.directionButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
             onPress={toggleSortDirection}
@@ -148,56 +156,41 @@ export default function CardsScreen() {
               color={colors.text}
             />
           </TouchableOpacity>
-        </View>
-
-        {showSortMenu && (
-          <View style={[styles.sortMenu, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            {sortOptions.map(option => (
-              <TouchableOpacity
-                key={option.field}
-                style={[
-                  styles.sortMenuItem,
-                  sortBy.field === option.field && { backgroundColor: colors.primaryLight + '20' },
-                ]}
-                onPress={() => handleSortChange(option.field)}
-              >
-                <Text
-                  style={[
-                    styles.sortMenuItemText,
-                    { color: sortBy.field === option.field ? colors.primary : colors.text },
-                  ]}
-                >
-                  {option.label}
-                </Text>
-                {sortBy.field === option.field && (
-                  <Ionicons name="checkmark" size={18} color={colors.primary} />
-                )}
-              </TouchableOpacity>
-            ))}
-          </View>
-        )}
-
-        {categories.length > 0 && (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.filterRow}
+          <TouchableOpacity
+            style={[styles.filterButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
+            onPress={() => setShowSortSheet(true)}
           >
-            <Chip
-              label="All"
-              selected={selectedCategoryIds.length === 0}
-              onPress={() => setSelectedCategoryIds([])}
+            <Text style={[styles.filterButtonText, { color: colors.text }]} numberOfLines={1}>
+              {getSortLabel()}
+            </Text>
+            <Ionicons name="chevron-down" size={14} color={colors.textSecondary} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.filterButton,
+              {
+                backgroundColor: colors.surface,
+                borderColor: selectedCategoryIds.length > 0 ? colors.primary : colors.border,
+              },
+            ]}
+            onPress={() => setShowCategorySheet(true)}
+          >
+            <Ionicons
+              name="folder-outline"
+              size={16}
+              color={selectedCategoryIds.length > 0 ? colors.primary : colors.textSecondary}
             />
-            {categories.map(category => (
-              <Chip
-                key={category.id}
-                label={`${category.name} (${category.card_count})`}
-                selected={selectedCategoryIds.includes(category.id)}
-                onPress={() => toggleCategoryFilter(category.id)}
-              />
-            ))}
-          </ScrollView>
-        )}
+            <Text
+              style={[
+                styles.filterButtonText,
+                { color: selectedCategoryIds.length > 0 ? colors.primary : colors.text },
+              ]}
+              numberOfLines={1}
+            >
+              {getCategoryLabel()}
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {cards.length === 0 ? (
@@ -238,6 +231,100 @@ export default function CardsScreen() {
         <Ionicons name="add" size={28} color="#0a0a0a" />
       </TouchableOpacity>
 
+      {/* Sort Action Sheet */}
+      <Modal
+        visible={showSortSheet}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowSortSheet(false)}
+      >
+        <Pressable style={styles.sheetOverlay} onPress={() => setShowSortSheet(false)}>
+          <Pressable style={[styles.sheetContent, { backgroundColor: colors.surface }]}>
+            <View style={[styles.sheetHandle, { backgroundColor: colors.border }]} />
+            <Text style={[styles.sheetTitle, { color: colors.text }]}>Sort By</Text>
+            {sortOptions.map(option => (
+              <TouchableOpacity
+                key={option.field}
+                style={styles.sheetOption}
+                onPress={() => handleSortChange(option.field)}
+              >
+                <Text
+                  style={[
+                    styles.sheetOptionText,
+                    { color: sortBy.field === option.field ? colors.primary : colors.text },
+                  ]}
+                >
+                  {option.label}
+                </Text>
+                {sortBy.field === option.field && (
+                  <Ionicons name="checkmark" size={20} color={colors.primary} />
+                )}
+              </TouchableOpacity>
+            ))}
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      {/* Category Action Sheet */}
+      <Modal
+        visible={showCategorySheet}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowCategorySheet(false)}
+      >
+        <Pressable style={styles.sheetOverlay} onPress={() => setShowCategorySheet(false)}>
+          <Pressable style={[styles.sheetContent, { backgroundColor: colors.surface }]}>
+            <View style={[styles.sheetHandle, { backgroundColor: colors.border }]} />
+            <View style={styles.sheetHeader}>
+              <Text style={[styles.sheetTitle, { color: colors.text }]}>Filter by Category</Text>
+              {selectedCategoryIds.length > 0 && (
+                <TouchableOpacity onPress={() => setSelectedCategoryIds([])}>
+                  <Text style={[styles.sheetClearText, { color: colors.primary }]}>Clear</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+            <ScrollView style={styles.sheetScroll} showsVerticalScrollIndicator={false}>
+              {categories.map(category => {
+                const isSelected = selectedCategoryIds.includes(category.id);
+                return (
+                  <TouchableOpacity
+                    key={category.id}
+                    style={styles.sheetOption}
+                    onPress={() => toggleCategoryFilter(category.id)}
+                  >
+                    <View style={styles.sheetOptionLeft}>
+                      <View
+                        style={[
+                          styles.checkbox,
+                          {
+                            borderColor: isSelected ? colors.primary : colors.border,
+                            backgroundColor: isSelected ? colors.primary : 'transparent',
+                          },
+                        ]}
+                      >
+                        {isSelected && <Ionicons name="checkmark" size={14} color="#fff" />}
+                      </View>
+                      <Text style={[styles.sheetOptionText, { color: colors.text }]}>
+                        {category.name}
+                      </Text>
+                    </View>
+                    <Text style={[styles.sheetOptionCount, { color: colors.textSecondary }]}>
+                      {category.card_count}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+            <TouchableOpacity
+              style={[styles.sheetDoneButton, { backgroundColor: colors.primary }]}
+              onPress={() => setShowCategorySheet(false)}
+            >
+              <Text style={styles.sheetDoneButtonText}>Done</Text>
+            </TouchableOpacity>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
       <ConfirmDialog
         visible={deleteConfirm !== null}
         title="Delete Card"
@@ -259,11 +346,20 @@ const styles = StyleSheet.create({
     padding: Spacing.md,
     gap: Spacing.sm,
   },
-  sortRow: {
+  filterRow: {
     flexDirection: 'row',
     gap: Spacing.sm,
   },
-  sortButton: {
+  directionButton: {
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  filterButton: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: Spacing.md,
@@ -272,43 +368,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     gap: Spacing.xs,
   },
-  sortButtonText: {
+  filterButtonText: {
+    flex: 1,
     fontSize: FontSize.sm,
     fontWeight: FontWeight.medium,
-  },
-  directionButton: {
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: Spacing.sm,
-    borderRadius: BorderRadius.md,
-    borderWidth: 1,
-  },
-  sortMenu: {
-    position: 'absolute',
-    top: 110,
-    left: Spacing.md,
-    borderWidth: 1,
-    borderRadius: BorderRadius.md,
-    zIndex: 10,
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  sortMenuItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    minWidth: 120,
-  },
-  sortMenuItemText: {
-    fontSize: FontSize.md,
-  },
-  filterRow: {
-    gap: Spacing.sm,
-    paddingVertical: Spacing.xs,
   },
   list: {
     padding: Spacing.md,
@@ -328,5 +391,82 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 4,
+  },
+  sheetOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  sheetContent: {
+    borderTopLeftRadius: BorderRadius.xl,
+    borderTopRightRadius: BorderRadius.xl,
+    paddingBottom: Spacing.xl,
+    maxHeight: '70%',
+  },
+  sheetHandle: {
+    width: 36,
+    height: 4,
+    borderRadius: 2,
+    alignSelf: 'center',
+    marginTop: Spacing.sm,
+    marginBottom: Spacing.md,
+  },
+  sheetHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.lg,
+    marginBottom: Spacing.md,
+  },
+  sheetTitle: {
+    fontSize: FontSize.lg,
+    fontWeight: FontWeight.semibold,
+    paddingHorizontal: Spacing.lg,
+    marginBottom: Spacing.md,
+  },
+  sheetClearText: {
+    fontSize: FontSize.md,
+    fontWeight: FontWeight.medium,
+  },
+  sheetScroll: {
+    maxHeight: 300,
+  },
+  sheetOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.lg,
+  },
+  sheetOptionLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.md,
+  },
+  sheetOptionText: {
+    fontSize: FontSize.md,
+  },
+  sheetOptionCount: {
+    fontSize: FontSize.sm,
+  },
+  checkbox: {
+    width: 22,
+    height: 22,
+    borderRadius: BorderRadius.sm,
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sheetDoneButton: {
+    marginHorizontal: Spacing.lg,
+    marginTop: Spacing.md,
+    paddingVertical: Spacing.md,
+    borderRadius: BorderRadius.md,
+    alignItems: 'center',
+  },
+  sheetDoneButtonText: {
+    color: '#0a0a0a',
+    fontSize: FontSize.md,
+    fontWeight: FontWeight.semibold,
   },
 });
