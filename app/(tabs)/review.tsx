@@ -472,6 +472,7 @@ const styles = StyleSheet.create({
   },
   summary: {
     alignItems: 'center',
+    marginTop: Spacing.lg,
     marginBottom: Spacing.md,
   },
   summaryText: {

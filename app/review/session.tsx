@@ -7,11 +7,13 @@ import {
 } from 'react-native';
 import { router, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { useTheme, useSession } from '@/hooks';
+import { useReviewPrompt } from '@/contexts';
 import { Spacing } from '@/constants/theme';
 import { SessionOrderMode } from '@/types';
 import { deleteCard } from '@/database';
 import { ConfirmDialog, EmptyState } from '@/components/ui';
 import { FlashcardView, ProgressBar, SessionComplete } from '@/components/review';
+import { ReviewPrompt } from '@/components/feedback';
 
 export default function ReviewSessionScreen() {
   const { colors } = useTheme();
@@ -32,6 +34,7 @@ export default function ReviewSessionScreen() {
     refreshCurrentCard,
     getProgress,
   } = useSession();
+  const { shouldShowReviewPrompt, triggerReviewPrompt } = useReviewPrompt();
 
   const [initializing, setInitializing] = useState(true);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
@@ -88,6 +91,7 @@ export default function ReviewSessionScreen() {
 
   const handleFinish = () => {
     endSession();
+    triggerReviewPrompt();
     router.back();
   };
 
@@ -176,6 +180,8 @@ export default function ReviewSessionScreen() {
         onConfirm={confirmDelete}
         onCancel={() => setDeleteConfirm(false)}
       />
+
+      <ReviewPrompt visible={shouldShowReviewPrompt} />
     </View>
   );
 }

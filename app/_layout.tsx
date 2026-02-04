@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { ThemeProvider, OnboardingProvider, useOnboardingContext } from '@/contexts';
+import { ThemeProvider, OnboardingProvider, useOnboardingContext, ReviewPromptProvider } from '@/contexts';
 import { useTheme } from '@/hooks';
 import { getDatabase } from '@/database';
 import { OnboardingScreen } from '@/components/onboarding';
@@ -93,7 +93,9 @@ export default function RootLayout() {
   return (
     <ThemeProvider>
       <OnboardingProvider>
-        <AppContent />
+        <ReviewPromptProvider>
+          <AppContent />
+        </ReviewPromptProvider>
       </OnboardingProvider>
     </ThemeProvider>
   );

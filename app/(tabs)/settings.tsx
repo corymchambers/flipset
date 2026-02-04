@@ -20,7 +20,8 @@ import * as DocumentPicker from 'expo-document-picker';
 import * as Clipboard from 'expo-clipboard';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/hooks';
-import { useOnboardingContext } from '@/contexts';
+import { useOnboardingContext, useReviewPrompt } from '@/contexts';
+import { FeedbackForm } from '@/components/feedback';
 import { Spacing, FontSize, FontWeight, BorderRadius } from '@/constants/theme';
 import { exportData, findImportConflicts, importData } from '@/database';
 import { Button, Card } from '@/components/ui';
@@ -29,6 +30,7 @@ import { ImportConflictResolution, ExportData } from '@/types';
 export default function SettingsScreen() {
   const { colors, isDark, setThemeMode } = useTheme();
   const { showOnboardingAgain } = useOnboardingContext();
+  const { showFeedbackForm, hideFeedbackForm, isFeedbackFormVisible } = useReviewPrompt();
   const [exporting, setExporting] = useState(false);
   const [importing, setImporting] = useState(false);
   const [pasteModalVisible, setPasteModalVisible] = useState(false);
@@ -272,6 +274,24 @@ export default function SettingsScreen() {
         </Card>
 
         <Text style={[styles.sectionTitle, { color: colors.text }]}>
+          Support
+        </Text>
+
+        <Card style={styles.card}>
+          <Button
+            title="View Welcome Screen"
+            variant="secondary"
+            onPress={showOnboardingAgain}
+          />
+          <Button
+            title="Leave Feedback"
+            variant="secondary"
+            onPress={showFeedbackForm}
+            style={styles.feedbackButton}
+          />
+        </Card>
+
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>
           Data Management
         </Text>
 
@@ -339,14 +359,15 @@ export default function SettingsScreen() {
           <Text style={[styles.cardDescription, { color: colors.textSecondary }]}>
             A simple, offline-first flashcard app for effective learning.
           </Text>
-          <Button
-            title="View Welcome Screen"
-            variant="secondary"
-            onPress={showOnboardingAgain}
-            style={styles.welcomeButton}
-          />
         </Card>
       </ScrollView>
+
+      <FeedbackForm
+        visible={isFeedbackFormVisible}
+        onClose={hideFeedbackForm}
+        title="Leave Feedback"
+        description="We'd love to hear from you. How can we improve Flipset?"
+      />
 
       <Modal
         visible={pasteModalVisible}
@@ -422,7 +443,7 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.md,
     lineHeight: FontSize.sm * 1.5,
   },
-  welcomeButton: {
+  feedbackButton: {
     marginTop: Spacing.sm,
   },
   buttonRow: {

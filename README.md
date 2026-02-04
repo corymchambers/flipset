@@ -10,7 +10,19 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
    npm install
    ```
 
-2. Start the app
+2. Set up environment variables
+
+   Create a `.env` file in the project root:
+
+   ```bash
+   EXPO_PUBLIC_WEB3FORMS_KEY=your_key_here
+   EXPO_PUBLIC_FEEDBACK_EMAIL=your_email@example.com
+   ```
+
+   - `EXPO_PUBLIC_WEB3FORMS_KEY` - API key for the feedback form. Get a free key at https://web3forms.com
+   - `EXPO_PUBLIC_FEEDBACK_EMAIL` - Email address to receive user feedback
+
+3. Start the app
 
    ```bash
    npx expo start

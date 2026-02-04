@@ -112,7 +112,27 @@ Manual testing checklist for the Flipset flashcard app. Update this file as new 
 - [ ] Session complete screen shows when all cards correct
 - [ ] Total cards and rounds displayed
 - [ ] "Start Over" restarts the session
-- [ ] "Finish" returns to Review tab
+- [ ] "Finish" returns to Review tab and triggers review prompt (if eligible)
+
+### Review Prompt (after session completion)
+- [ ] Prompt appears after completing first session: "Are you enjoying Flipset?"
+- [ ] "Yes, I like it" → shows "Would you mind leaving a quick review?"
+- [ ] "Leave a review" → opens App Store review, never asks again
+- [ ] "Not now" → dismisses, 30-day cooldown before asking again
+- [ ] "Not really" → shows "Want to share what's not working?"
+- [ ] "Send feedback" → opens feedback form
+- [ ] "No thanks" → dismisses, never asks again
+- [ ] Prompt does not appear if user previously declined or left review
+
+## Feedback
+
+### Feedback Form
+- [ ] "Leave Feedback" button in Settings → About section
+- [ ] Feedback form opens with text field and optional email
+- [ ] "Send" submits feedback (requires text)
+- [ ] "Cancel" closes form without sending
+- [ ] Success message shows after submission
+- [ ] "Done" closes success message
 
 ## Onboarding
 
