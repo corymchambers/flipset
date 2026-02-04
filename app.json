@@ -11,7 +11,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.corychambers.flipset",
-      "buildNumber": "8",
+      "buildNumber": "9",
       "appleTeamId": "D8DX35HW6N",
       "deploymentTarget": "15.5",
       "infoPlist": {
@@ -41,6 +41,13 @@
           "backgroundColor": "#0a0a0a",
           "image": "./assets/splash-icon.png",
           "imageWidth": 1200
+        }
+      ],
+      [
+        "@sentry/react-native/expo",
+        {
+          "organization": "codechambers",
+          "project": "flipset"
         }
       ]
     ]

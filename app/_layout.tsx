@@ -2,10 +2,17 @@ import { useEffect } from 'react';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import * as Sentry from '@sentry/react-native';
 import { ThemeProvider, OnboardingProvider, useOnboardingContext, ReviewPromptProvider } from '@/contexts';
 import { useTheme } from '@/hooks';
 import { getDatabase } from '@/database';
 import { OnboardingScreen } from '@/components/onboarding';
+
+Sentry.init({
+  dsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
+  // Disable performance monitoring to stay within free tier
+  tracesSampleRate: 0,
+});
 
 function AppContent() {
   const { colors, isDark } = useTheme();
