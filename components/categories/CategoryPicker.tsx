@@ -45,14 +45,6 @@ export function CategoryPicker({
           </Text>
         ) : (
           <>
-            {selectableCategories.map((category) => (
-              <Chip
-                key={category.id}
-                label={category.name}
-                selected={selectedIds.includes(category.id)}
-                onPress={() => onToggle(category.id)}
-              />
-            ))}
             {onAddCategory && (
               <TouchableOpacity
                 style={[styles.addButton, { borderColor: colors.border }]}
@@ -62,6 +54,14 @@ export function CategoryPicker({
                 <Text style={[styles.addText, { color: colors.textSecondary }]}>Add</Text>
               </TouchableOpacity>
             )}
+            {selectableCategories.map((category) => (
+              <Chip
+                key={category.id}
+                label={category.name}
+                selected={selectedIds.includes(category.id)}
+                onPress={() => onToggle(category.id)}
+              />
+            ))}
           </>
         )}
       </ScrollView>

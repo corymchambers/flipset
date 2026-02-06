@@ -307,13 +307,13 @@ export default function ReviewScreen() {
         </View>
       </Card>
 
-      {/* Summary */}
-      <View style={styles.summary}>
+      </ScrollView>
+
+      {/* Fixed Footer */}
+      <View style={[styles.footer, { backgroundColor: colors.background, borderTopColor: colors.border }]}>
         <Text style={[styles.summaryText, { color: colors.textSecondary }]}>
           {cardCount} {cardCount === 1 ? 'card' : 'cards'} selected
         </Text>
-      </View>
-
         <Button
           title="Start Review Session"
           onPress={handleStartSession}
@@ -322,7 +322,7 @@ export default function ReviewScreen() {
           fullWidth
           size="lg"
         />
-      </ScrollView>
+      </View>
 
       <ConfirmDialog
         visible={endSessionDialog}
@@ -346,6 +346,7 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: Spacing.md,
+    paddingBottom: Spacing.xl,
   },
   header: {
     flexDirection: 'row',
@@ -470,12 +471,14 @@ const styles = StyleSheet.create({
   orderOption: {
     paddingVertical: Spacing.sm,
   },
-  summary: {
-    alignItems: 'center',
-    marginTop: Spacing.lg,
-    marginBottom: Spacing.md,
+  footer: {
+    padding: Spacing.md,
+    paddingTop: Spacing.sm,
+    borderTopWidth: 1,
+    gap: Spacing.sm,
   },
   summaryText: {
     fontSize: FontSize.md,
+    textAlign: 'center',
   },
 });
