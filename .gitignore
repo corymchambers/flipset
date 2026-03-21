@@ -41,3 +41,4 @@ yarn-error.*
 /ios
 /android
 android/app/release.keystore
+release.keystore

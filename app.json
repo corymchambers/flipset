@@ -24,7 +24,8 @@
         "backgroundColor": "#0a0a0a"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.corychambers.flipset"
+      "package": "com.corychambers.flipset",
+      "versionCode": 2
     },
     "web": {
       "favicon": "./assets/favicon.png",
