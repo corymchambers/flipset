@@ -2,7 +2,7 @@
   "expo": {
     "name": "Flipset",
     "slug": "flipset",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
@@ -11,7 +11,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.corychambers.flipset",
-      "buildNumber": "9",
+      "buildNumber": "10",
       "appleTeamId": "D8DX35HW6N",
       "deploymentTarget": "15.5",
       "infoPlist": {
@@ -25,7 +25,7 @@
       },
       "edgeToEdgeEnabled": true,
       "package": "com.corychambers.flipset",
-      "versionCode": 2
+      "versionCode": 3
     },
     "web": {
       "favicon": "./assets/favicon.png",
@@ -45,10 +45,25 @@
         }
       ],
       [
-        "@sentry/react-native/expo",
+        "expo-signed",
         {
-          "organization": "codechambers",
-          "project": "flipset"
+          "store_file": {
+            "key": "FLIPSET_UPLOAD_STORE_FILE",
+            "value": "release.keystore"
+          },
+          "key_alias": {
+            "key": "FLIPSET_UPLOAD_KEY_ALIAS",
+            "value": "flipset"
+          },
+          "store_password": {
+            "key": "FLIPSET_UPLOAD_STORE_PASSWORD",
+            "value": ""
+          },
+          "key_password": {
+            "key": "FLIPSET_UPLOAD_KEY_PASSWORD",
+            "value": ""
+          },
+          "keystorePath": "."
         }
       ]
     ]

@@ -1,7 +1,6 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import {
   View,
-  FlatList,
   StyleSheet,
   TouchableOpacity,
   Text,
@@ -10,6 +9,7 @@ import {
   ScrollView,
   Pressable,
 } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import { useFocusEffect, router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/hooks';
@@ -123,6 +123,30 @@ export default function CardsScreen() {
 
   const hasActiveFilters = searchQuery.length > 0 || selectedCategoryIds.length > 0;
 
+  const flatListRef = useRef<FlashList<CardWithCategories>>(null);
+  const ALPHABET = '#ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+
+  const letterIndexMap = useMemo(() => {
+    if (sortBy.field !== 'alphabetical') return {};
+    const map: Record<string, number> = {};
+    cards.forEach((card, index) => {
+      const raw = card.front_content.replace(/<[^>]*>/g, '').trim();
+      const firstChar = (raw || '').charAt(0).toUpperCase();
+      const letter = /[A-Z]/.test(firstChar) ? firstChar : '#';
+      if (!(letter in map)) map[letter] = index;
+    });
+    return map;
+  }, [cards, sortBy.field]);
+
+  const activeLetters = useMemo(() => new Set(Object.keys(letterIndexMap)), [letterIndexMap]);
+
+  const scrollToLetter = useCallback((letter: string) => {
+    const index = letterIndexMap[letter];
+    if (index !== undefined && flatListRef.current) {
+      flatListRef.current.scrollToIndex({ index, animated: false });
+    }
+  }, [letterIndexMap]);
+
   const getSortLabel = () => {
     const option = sortOptions.find(o => o.field === sortBy.field);
     return option?.label || 'Sort';
@@ -206,21 +230,45 @@ export default function CardsScreen() {
           onAction={hasActiveFilters ? clearFilters : () => router.push('/card/new')}
         />
       ) : (
-        <FlatList
-          data={cards}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <CardListItem
-              card={item}
-              onPress={() => router.push(`/card/${item.id}`)}
-              onDelete={() => setDeleteConfirm(item.id)}
-            />
+        <View style={styles.listContainer}>
+          <FlashList
+            ref={flatListRef}
+            data={cards}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => (
+              <CardListItem
+                card={item}
+                onPress={() => router.push(`/card/${item.id}`)}
+                onDelete={() => setDeleteConfirm(item.id)}
+              />
+            )}
+            contentContainerStyle={styles.list}
+            estimatedItemSize={110}
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+            }
+          />
+          {sortBy.field === 'alphabetical' && cards.length > 0 && (
+            <View style={styles.alphabetSidebar}>
+              {ALPHABET.map(letter => (
+                <Pressable
+                  key={letter}
+                  onPress={() => activeLetters.has(letter) && scrollToLetter(letter)}
+                  style={styles.alphabetLetterContainer}
+                >
+                  <Text
+                    style={[
+                      styles.alphabetLetter,
+                      { color: activeLetters.has(letter) ? colors.primary : colors.textTertiary },
+                    ]}
+                  >
+                    {letter}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
           )}
-          contentContainerStyle={styles.list}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
-          }
-        />
+        </View>
       )}
 
       <TouchableOpacity
@@ -373,9 +421,31 @@ const styles = StyleSheet.create({
     fontSize: FontSize.sm,
     fontWeight: FontWeight.medium,
   },
+  listContainer: {
+    flex: 1,
+  },
   list: {
     padding: Spacing.md,
     paddingTop: 0,
+  },
+  alphabetSidebar: {
+    position: 'absolute',
+    right: 2,
+    top: 0,
+    bottom: 0,
+    width: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  alphabetLetterContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 22,
+  },
+  alphabetLetter: {
+    fontSize: 11,
+    fontWeight: FontWeight.bold,
   },
   fab: {
     position: 'absolute',
